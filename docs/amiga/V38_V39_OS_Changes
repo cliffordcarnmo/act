@@ -1,0 +1,3175 @@
+
+	 	  	V38, V38, V40 Changes
+
+       (c) 1992-93 Commodore-Amiga, Inc.  All Rights Reserved
+
+------------------------------------------------------------------------
+NOTE: This document was written before the release of V39 and therefore
+some of the changes noted may have actually ended up in earlier or later
+releases, or may not have occurred at all.  However, it is still a very
+useful document summarizing changes to the disks and the ROM.
+V38 is 2.1, V39 is 3.0, and V40 is 3.1.
+------------------------------------------------------------------------
+
+Many changes were made to the system software for V39.  The major
+differences are in the graphics subsystem and in Intuition.  There were
+also hundreds of changes made to other areas of the system software.  This
+document presents the majority of these changes, and explains the possible
+impact of these new features on the developer. 
+
+V39 requires both a new disk set, and a new ROM.  V38 is a disk-based
+upgrade requiring only a new disk set if your system have 2.04 Kickstart.
+
+The main changes to the contents of the disks in V39 are detailed in
+Appendix A and in Appendix B.  Here are the highlights of changes to
+system disk organization:
+
+   o The V38/V39 system software is shipped on FFS floppies.  This is
+mainly to increase available storage. 
+
+   o Under V38, a Storage drawer was created on the Extras disk.  Under
+V39, a separate Storage disk is provided.  Storage contains the same five
+drawers as in the Devs drawer.  This is where things that are not
+currently used are kept.  To activate a monitor, the user is expected to
+drag the desired monitor icon from Storage/Monitors to Devs/Monitors.
+Same applies for printer drivers, keymaps, DOS drivers, and datatypes
+
+   o The Fonts disk is now called FONTS instead of AmigaFonts.  This
+enables the disk to be used directly whenever fonts are needed by the
+system, instead of requiring the user to assign FONTS: to the disk. 
+
+   o Note that there are different specific disk sets shipped with
+different machines and packages.  For example, low-end V38 systems do not
+get a Locale disk, and instead have a Locale directory on the Workbench
+disk. 
+
+   o Deleted Files.  The following system files present under V37 are no
+longer included with the system software. 
+
+  Devs/narrator.device    Deleted as part of the removal of speech support.
+  Libs/translator.library Deleted as part of the removal of speech support.
+
+  Tools/Colors Removed in V39 because its functionality conflicted with
+pen sharing, and was generally not very nice to applications. 
+  Utilities/Display This program is replaced under V39 by the more
+flexible and powerful MultiView utility. 
+  Utilities/More.info This icon has been removed because we want to
+encourage users to use MultiView instead of More when running from
+Workbench.  The More program itself remains on the disk since it is
+referenced by many read me files, and the like. 
+
+   o Speech Support.  The various components supporting synthesized speech
+are no longer included with the operating system.  This can be a serious
+liability for applications depending on synthesized speech for correct
+operation.  The V37 components supporting speech still function correctly
+under V38 and V39.  The V38/V39 installation procedures do not remove the
+V37 files when updating a system. 
+
+Further etails of how the system disks have changed can be found in
+Appendix A and B.  V39 ROM changes are listed in Appendix C and D. 
+
+
+V38/V39 API Changes
+===================
+ This section discusses what changes in the programming model can affect
+developers. 
+
+Finding Version Information
+
+An important point to mention is how to determine if a system is running
+V38 instead of V37.  The recommended approach is to open version.library,
+and check its version.  For example:
+
+struct Library *VersionBase;
+if (VersionBase = OpenLibrary("version.library",0))   
+{
+       if (VersionBase->lib_Version >= 38)
+       {           /* user is running at least V38 Workbench */       }
+       else
+       {           /* user is running at most V37 Workbench */       }   
+}   
+else   
+{     /* can't tell what the user is running, assume the minimum version
+       * that your application supports        */   
+}
+
+The above technique lets you determine which general version is in use for
+the disk-based software.  Never assume this is a reflection of every other
+library in the system.  For example, if you need features that are only
+present in V38 asl.library, you must explicitly check the version of
+asl.library before using it.  The same is true for all other system
+libraries. 
+
+To determine the general version of the ROM, use
+SysBase->LibNode.lib_Version.
+
+
+GadTools Library
+================
+
+Many enhancements were made to GadTools for V39.  Below you will find
+short descriptions of some of the new features.  A complete list of all
+the new features is provided in Appendix A, and more details can be had in
+gadtools.doc. 
+
+Menus.  GadTools fully supports Intuition's NewLook menus.  NewLook menus
+can be added to an application by providing the {WA_NewLookMenus, TRUE}
+tag to OpenWindowTags(), and providing the {GTMN_NewLookMenus, TRUE} tag
+to LayoutMenus().  These two tags will give your application NewLook
+menus.  The pens used to render these menus are controllable by the user
+through the V39 Palette prefs editor. 
+
+You can now put an arbitrary command string in the right-hand side of a
+menu, where the Amiga-key equivalent normally goes.  To do this, point the
+NewMenu.nm_CommKey field at the string (e.g., "Shift-Alt-F1), and set the
+new NM_COMMANDSTRING flag in NewMenu.nm_Flags. 
+
+GT_GetGadgetAttrs().  GadTools now has a GT_GetGadgetAttrsA() function
+which retrieves attributes of the specified gadget, according to the
+attributes chosen in the tag list.  For each entry in the tag list, ti_Tag
+identifies the attribute, and ti_Data is a pointer to the long variable
+where you wish the result to be stored. 
+ Here is an example:
+
+     LONG top = 0;
+     LONG selected = 0;
+     LONG result;
+     result = GT_GetGadgetAttrs(listview_gad, win, NULL,
+                                GTLV_Top, &top,
+                                GTLV_Selected, &selected,
+                                TAG_DONE);
+     if (result != 2)
+     {
+         printf( "Something's wrong!" );
+     }
+
+Palettes.  GadTools palette gadgets got a major overhaul for V39.  There
+are a few new features, some reduction in memory usage, and an increase in
+performance. 
+ 
+Palette gadgets no longer display a box filled with the selected color.
+The selected color is instead denoted by a box drawn around the color
+square in the main palette area.  This change slightly impacts the size of
+palette gadgets.  Depending on the conditions, V39 PALETTE_KIND gadgets
+can be slightly smaller than the V37 ones. 
+ 
+Another change which can affect the size of the palette gadgets is the
+smarter layout of the color squares.  An attempt is now made to keep the
+color squares as square as possible, based on the aspect ratio information
+obtained from the gfx database.  As many color squares as possible are put
+on the screen, until things get too small in which case the upper colors
+are thrown away.  The GTPA_ColorTable tag was added in support of sparce
+color tables.  It lets you define arbitrary pens to be used to fill-in the
+color squares of the palette gadget. 
+
+The GTPA_NumColors tag lets you define the exact number of colors to
+display in the palette gadget.  Under V37, the GTPA_Depth tag played the
+same role.  The problem with GTPA_Depth is that only multiples of 2 in
+number of colors can be specified.  GTPA_NumColors allows any number of
+colors. 
+
+Listviews.  GadTools listviews got a major overhaul for V39.  There are a
+few new features, some reduction in memory usage, and an increase in
+performance. 
+
+The biggest difference that is readily noticeable is the disappearance of
+the display box at the bottom of the scrolling list area.  Instead of
+showing the selected item in the display box, the selected item remains
+highlighted within the scrolling list.  This was done to prepare listviews
+for multi-select support.  Multi-selection requires a highlighting scheme
+as a display box would not work.  The removal of the display box has a
+slight impact on the size of the listview.  Listviews that had a display
+box under V37 got slightly smaller vertically under V39. 
+
+The other major addition to GadTools listviews is GTLV_CallBack.  This tag
+allows a callback hook to be provided to gadtools for listview handling.
+Currently, the hook only gets called to render an individual item.  Every
+time GadTools wishes to render an item in a listview, it invokes the call
+back function, which can do custom rendering.  This allows GadTools
+listviews to be used to scroll complex items such as graphics and images. 
+
+Finally, listviews can now be disabled using {GA_Disabled, TRUE}.
+
+
+The ASL Library
+===============
+
+ASL got rewritten for V38.  Its file requester is now extremely fast and
+offers more features to the user, and to the programmer.  Its font
+requester now comes up about twice as fast the first time it is displayed,
+and instantaneously for subsequent uses.  ASL also now includes a screen
+mode requester, which is very useful in the context of AA, and will be
+invaluable for AAA and RTG. 
+
+New Names.  V38 <libraries/asl.h> contains new names for most of the
+structures, tags, and flag bits used by ASL.  The names are now
+consistent, and more descriptive.  We encourage the use of the new names
+as much as possible. 
+
+To ensure your code only uses the new names, just define the symbol
+ASL_V38_NAMES_ ONLY before including <libraries/asl.h>:
+
+#define ASL_V38_NAMES_ONLY 
+#include <libraries/asl.h>
+
+The symbol definition will prevent the old-style names from being defined.
+This is the same method used to disable the pre-V37 names in Intuition
+header files. 
+
+Don't Trust Me.  The many filtering tags that you can supply to the ASL
+requesters are only advisory in nature.  For example, even if you request
+that only non-proportional fonts be allowed in the font requester, the
+user can still type in the name of a proportional font.  The user can also
+enter out-of-bounds values for any numeric parameter.  You must check all
+results for sanity prior to using them. 
+
+Common ASL Tags.  The tags for the different requesters are now distinct
+from one another instead of being all grouped together.  All options that
+could be set via flag bits now have individual tags to control them.  For
+example, there is now an ASLFR_DoSaveMode tag that does the same as the
+FRF_DOSAVEMODE flag bit. 
+
+Some basic tags are supported by all requester types:
+
+ASLXX_Window.  This indicates the parent window of the requester. You
+provide a window pointer, and if you don't specify an ASLXX_Screen tag,
+then the ASL requester will open on the same screen as this window. 
+
+ASLXX_PubScreenName.  You provide this tag with the name of a public
+screen to open the ASL requester on. 
+
+ASLXX_Screen.  You provide this tag with a pointer to a Screen to open on.
+If none of the above three tags are specified, then the ASL requester will
+open on the current default public screen.  This will most likely by
+Workbench. 
+
+ASLXX_PrivateIDCMP.  By default, ASL requesters use the same IDCMP port as
+their parent window (specified using ASLXX_Window).  You can request that
+a private IDCMP port be used by setting this tag to TRUE.  If you don't
+provide a parent window, then a private port is automatically used and
+this tag need not be provided. 
+
+ASLXX_IntuiMsgFunc.  You provide this tag a pointer to a Hook structure,
+which indicates a routine to run whenever an IntuiMessage arrives at the
+ASL requester's IDCMP port that is not meant for the requester's window.
+This happens whenever the ASL requester is sharing the parent's window
+IDCMP port, and a message for the parent window arrives at the port.  The
+function being called can process the message for the application. 
+
+ASLXX_SleepWindow.  If you set this tag to TRUE, ASL will put the parent
+window (specified using ASLXX_Window) to sleep until the ASL requester is
+satisfied. This involves blocking all input in the parent window, and
+displaying a busy pointer in it. 
+
+
+ASLXX_TextAttr.  You can provide a pointer to a standard TextAttr
+structure which defines the font to use in the ASL requester.  If this tag
+is not supplied, the default behavior is to use the font of the screen on
+which the requester opens.  Note that just like for Intuition objects, the
+font indicated by the TextAttr structure must already be in memory before
+using the requester.  There is no guarantee that ASL will actually use the
+font you asked for.  If that font is too large, ASL will use a smaller
+one.  Also, as of V39, the file requester's file list requires a monospace
+font.  So if you provide a proportional font, the file requester will use
+the system default font instead for its list of files. 
+
+ASLXX_Locale.  You pass this tag a pointer to a Locale structure, as
+obtained from the locale.library/OpenLocale() function.  The locale is
+used to determine in which language, and using which country information,
+the various requesters should be displayed.  If this tag is not provided,
+or its value is NULL, then the default system Locale is used.  This
+corresponds to what the user has currently picked in the Locale prefs
+editor.  As of V39, certain items such as the dates in the file requester
+always use the system default Locale instead of the Locale provided with
+this tag. 
+
+ASLXX_TitleText.  Provide this tag a string which will be used for the
+title of the requester.  If this tag is not provided, the requester has no
+title. 
+
+ASLXX_PositiveText.  Provide this tag a string which will be used for the
+label of the positive choice gadget in the requester.  If this string is
+not provided, a localized default is used (English default is "OK").  We
+recommend using this tag to make the action of the various requesters more
+clear to the user.  For example, when a file requester is being displayed
+to load a file, it is clearer if the gadget says "Open" instead of simply
+"OK". 
+
+ASLXX_NegativeText.  Provide this tag a string which will be used for the
+label of the negative choice gadget in the requester.  If this string is
+not provided, a localized default is used (English default is "Cancel"). 
+
+ASLXX_InitialLeftEdge, ASLXX_InitialTopEdge, ASLXX_InitialWidth,
+ASLXX_InitialHeight.  These four tags let you specify the position and
+size of the ASL requester window.  These are only requests that ASL may
+decide to ignore.  When an ASL requester is closed, it is easy to
+determine the position and size of the requester when the user closed it.
+It is a good idea for an application to remember these values and use them
+in subsequent invocations of the requester. 
+
+The File Requester.  The file requester supports a number of tags.  Some
+of the tags introduced in V38 are discussed here. 
+
+Note that the future holds many changes in the ASL file requester that
+will substantially increase its flexibility to both the programmer and the
+user.  If you use the ASL file requester in your applications today, you
+will automatically get the majority of these new features when they become
+available.  Rolling your own file requester means a lot of extra work, and
+means that you will not automatically benefit from the new interface when
+it becomes available. 
+
+ASLFR_DoSaveMode.  Setting this tag to TRUE indicates the file requester
+is being used for saving information.  When in save mode, the file
+requester changes slightly.  The most obvious change is the use of a
+different set of colors in the file list.  This is a direct queue to the
+user that something is being selected for writing, not reading.  Second
+change is that if the user enters a directory name which doesn't exist,
+ASL will prompt the user to see if the user wishes to create the
+directory.  This lets the user create new directories to save files into.
+There are likely to be more differences between normal and save mode in
+the future.  Please use this tag when appropriate. 
+
+ASLFR_RejectIcons.  When set to TRUE, this tag prevents icons (.info
+files) from being displayed in the file requester.  If this tag is not
+specified, icons will be displayed by the file requester.  Please use this
+tag in all your software.  Workbench users should never have to see .info
+files.  The default behavior of the file requester is to display .info
+files, which is incorrect. Unfortunately, this default behavior cannot be
+changed due to compatibility. 
+
+ASLFR_DoPatterns.  Setting this tag to TRUE causes a Pattern gadget to be
+displayed in the file requester, which allows the user to enter AmigaDOS
+patterns to filter out files.  The default is to have no pattern gadget. 
+
+ASLFR_DrawersOnly.  Setting this tag to TRUE causes the file requester to
+have no File gadget, and to only display directory names in its file list.
+This is a useful option if you wish to have the user select a destination
+directory for a particular task. 
+
+ASLFR_RejectPattern.  Provide an AmigaDOS pattern to this tag, and any
+files matching this pattern will not be displayed in the file requester.
+This pattern can never be edited by the user.  Note that the pattern you
+provide here must have already been parsed by
+dos.library/ParsePatternNoCase(). 
+
+ASLFR_AcceptPattern.  Provide an AmigaDOS pattern to this tag, and only
+files matching this pattern will be displayed in the file requester.  This
+pattern can never be edited by the user.  Note that the pattern you
+provide here must have already been parsed by
+dos.library/ParsePatternNoCase(). 
+
+ASLFR_FilterDrawers.  Setting this tag to TRUE causes the
+ASLFR_RejectPattern, ASLFR_AcceptPattern, and the Pattern text gadget to
+also apply to filter drawer names.  Drawers are normally never affected by
+pattern filtering. 
+
+The Screen Mode Requester.  The screen mode requester allows the user to
+select amongst the wide range of display modes available on the Amiga.
+Future chip sets, and the RTG effort will yield a very large additional
+number of display modes.  Using the ASL requester is a good way to ensure
+that you benefit from the maximum upwards compatibility possible.  In many
+cases, by using the screen mode requester, your applications will
+automatically be able to open displays in new modes that are introduced in
+future OS revisions. 
+
+An important point to note is that the interface presented to the user by
+the screen mode requester is likely to change dramatically in the future.
+This is because the increased number of available modes will make the
+current interface difficult to use and understand at best.  A new scheme
+is being developed that should allow the user to more easily and
+accurately pick display modes.  If you use the ASL screen mode requester
+in your applications instead of rolling your own version, your application
+will automatically get this new interface when it becomes available. 
+
+The ultimate goal of the screen mode requester is to return a graphics
+mode id.  The mode ids are used since V37 to distinguish between the
+different display modes in the system.  The screen mode requester can also
+return additional information including requested display sizes and depth. 
+
+As all other ASL requesters, you get the result of a request by reading
+the contents of the requester structure after the AslRequest() calls
+return success.  There are two fields worth mentioning in the
+ScreenModeRequester structure: sm_BitMapWidth and sm_BitMapHeight.  These
+values define the values to pass to AllocRaster() and InitBitMap() when
+hand-building a BitMap structure to display the requested width, height,
+and depth.  This is useful when running on a V37 ROM.  For V39 use, simply
+use the values in sm_Width and sm_Height, and pass those to AllocBitMap()
+directly. 
+
+Here are the most important screen mode requester tags.
+
+ASLSM_InitialDisplayID.  This tag sets the initial mode that is selected
+in the mode listview.  You provide it a graphics mode id, and that mode
+will be initially selected in the file requester. 
+
+ASLSM_InitialDisplayWidth, ASLSM_InitialDisplayHeight,
+ASLSM_InitialDisplayDepth.  These tags determine the initial setting of
+three gadgets that can optionally be displayed in the requester.  The
+default if these tags are not provided are a width of 640, a height of
+200, and a depth of 2. 
+
+ASLSM_InitialOverscanType.  This tag determines the initial setting of the
+Overscan Type cycle gadget.  This optional gadget lets the user pick which
+overscan setting to use for the given mode.  The values you can provide to
+this tag are: OSCAN_TEXT, OSCAN_STANDARD, OSCAN_MAXIMUM, and OSCAN_VIDEO.
+OSCAN_VIDEO is only available starting with V39, it is not in V38.  The
+four OSCAN_XX constants are defined in <intuition/screens.h>. 
+
+ASLSM_InitialAutoScroll.  This tag can be set to TRUE or FALSE and
+determines what the initial state of the option AutoScroll checkbox gadget
+should be. 
+
+
+
+ASLSM_DoWidth, ASLSM_DoHeight, ASLSM_DoDepth, ASLSM_DoOverscanType,
+ASLSM_DoAutoScroll.  These tags control which of the optional gadgets is
+displayed in the screen mode requester.  The default is to have none of
+these present.  Setting any of these tags to TRUE will make the gadget
+appear. 
+
+ASLSM_MinWidth, ASLSM_MaxWidth, ASLSM_MinHeight, ASLSM_MaxHeight,
+ASLSM_MinDepth, ASLSM_MaxDepth.  These tags let you specify limits to the
+values the user is allowed to enter in the requester. 
+
+ASLSM_PropertyFlags, ASLSM_PropertyMask.  These two tags cooperate to
+allow a flexible means of filtering out unwanted display modes.  Each
+display mode in the graphics database has a given set of properties
+associated with it.  These tags allow you to determine which modes to
+display in the mode list of the requester based on the properties of the
+modes. 
+
+	The mode properties are defined as a ULONG of flag bits.  The
+definitions for all supported properties are in <graphics/displayinfo.h>.
+Examples include DIPF_IS_WB and DIPF_IS_LACE. 
+
+	ASLSM_PropertyMask defines which properties you are concerned with.
+Those are the only bits for which the specific setting matters to you.
+The setting of all other property bits doesn't matter to you. 
+
+	ASLSM_PropertyFlags defines exactly in which state the property
+flags you are have shown interest in via the ASLSM_PropertyMask tag should
+be. 
+
+	The way ASLSM_PropertyMask and ASLSM_PropertyFlags interact is
+indentical to how the two flags parameters interact in
+exec.library/SetSignal().  This is how ASL uses the tag values internally:
+
+	     if ((displayInfo.PropertyFlags & propertyMask) ==
+	        (propertyFlags & propertyMask))
+	     {
+	         /* Mode accepted */
+	     }
+	     else
+	     {
+	         /* Mode rejected */
+	     }
+ 
+	An example can help understand the relationship between the two
+tags.  If you want to display only screen modes that can be used for the
+Workbench screen, and that are not interlaced, you would set
+ASLSM_PropertyMask to (DIPF_IS_WB|DIPF_IS_LACE), and ASLSM_PropertyFlags
+to (DIPF_IS_WB).  The mask value means you are interested in the state of
+the DIPF_IS_WB and DIPF_IS_LACE bits.  The flags value says you want the
+DIPF_IS_WB to be set, and the DIPF_IS_LACE bit to be clear. 
+
+
+The Locale Library
+==================
+The locale.library provides the core of system localization.
+See other readmes about Locale.library.
+
+The Bullet Library
+================== 
+The bullet.library contains the Compugraphic outline font rendering
+engine. 
+
+
+
+Color Wheel and Gradient Slider
+===============================
+
+The color wheel and gradient slider are two new BOOPSI classes introduced
+in V39. Together, they offer a very nice interface to let the user select
+or adjust colors.  The V39 Palette prefs uses both classes in its
+interface. 
+
+Using either of these classes requires you to first open them as
+libraries, and then create new BOOPSI objects using the NewObject()
+function:
+
+     if (ColorWheelBase = OpenLibrary("gadgets/colorwheel.gadget",0))
+     {
+         cw = NewObject(...);
+     }
+
+For an introduction to programming the color wheel and gradient slider,
+refer to the 3.0 colorwheel example. 
+
+The colorwheel.gadget.  The color wheel class provides the ability to
+create gadgets enabling the user to control the hue and saturation
+components of an HSB (Hue-Saturation-Brightness) color space.  The
+companion gradient slider class enables control of the brightness
+component of the color space. 
+
+The color wheel can operate on screens of any depth, and adapts its
+rendering to the number of colors available.  The system's pen sharing
+system is used in order to maximize the number of colors used by the
+wheel.  A color wheel gadget is (normally) responsible for choosing it's
+own color pens to draw in (using graphics.library/ObtainBestPen()).
+However, the creator of the gadget can "donate" some of its pens to the
+gadget, using the WHEEL_Donation tag. 
+
+The reason that the color wheel picks its own colors is because it has the
+ability to display several different layouts depending on the number and
+variety of colors available.  For example, when opening on a screen of low
+depth or when opening on a screen where all the pens have already been
+allocated exclusively, the gadget will display a "monochrome" version of
+the color wheel, where instead of colored segments, the letters "R" (for
+red), "G" (for green), "B" (for blue), "Y" (for yellow), "C" (for cyan)
+and "M" (for magenta) will be used as labels. 
+
+You can talk to the color wheel using HSB or RGB, even though the color
+wheel only really deals with HSB in its user-interface.  All
+communications with applications are performed with full 32-bit color
+component values.  Internally everything is currently kept and processed
+in 16-bit space, although this might change in the future. 
+
+Here are the main tags supported by the color wheel class:
+
+WHEEL_Hue.  Lets you control the Hue component of the color wheel.  This
+is effectively the angle around the wheel where the desired color lies.  A
+hue value of 0 is all red, and nothing but red.  Increasing the value
+moves the color towards all green at $55555555, full blue at $AAAAAAAA,
+and back to red at $FFFFFFFF. 
+
+WHEEL_Saturation.  Lets you control the Saturation component of the color
+wheel.  This is effectively the distance from the center of the wheel
+where the desired color lies.  A saturation value of 0 puts the knob at
+the center of the wheel and always yields white.  Increasing the value
+progressively moves the knob farther away from the center.  until the
+value $FFFFFFFF is reached in which case the knob is as far as it can go. 
+
+WHEEL_Brightness.  Lets you control the Brightness component of the color
+wheel.  The color wheel does not itself have any means of displaying or
+editing brightness, but it does maintain this value internally.  Used with
+the WHEEL_GradientSlider tag, you can control the value of a
+gradientslider object by passing WHEEL_Brightness to a color wheel.  A
+brightness value of 0 means all black.  Increasing the value progressively
+brightens the current color, until the value $FFFFFFFF is reached in which
+case the color is as bright as it gets. 
+
+WHEEL_Red, WHEEL_Green, WHEEL_Blue.  Let you specify new RGB values for
+the color wheel.  The values provided are converted into HSB values are
+then used. 
+
+WHEEL_Screen.  This is a required tag that lets you specify the screen on
+which the color wheel is to be displayed.  Note that once a color wheel is
+created, the screen should not be closed until the color wheel object is
+discarded using DisposeObject(). 
+
+WHEEL_BevelBox.  If you set this tag to TRUE, a bevel box will be drawn
+around the color wheel object. 
+
+WHEEL_GradientSlider.  This tag lets you attach a gradient slider object
+to the color wheel.  You give this tag a pointer to a gradient slider
+object obtained previously from NewObject().  Once this is done, anytime
+the various tags that can affect the brightness component of the current
+color is sent to the color wheel, the color wheel automatically changes
+the value of the attached gradient slider to match that new brightness
+value.  Reading the brightness value from the color wheel returns the
+current value indicated by the gradient slider. 
+
+	Using this tag effectively allows you to treat the color wheel and
+gradient sliders as a single gadget.  Once things are set up, all
+communications occur through the wheel object, and the gradient slider can
+pretty much be ignored. 
+
+The gradientslider.gadget.  The gradient slider gadget class is a type of
+non-proportional slider.  The primary feature of the gradient slider is
+it's appearance.  Unlike normal sliders, a gradient slider can display a
+"spread of colors" or "color gradient" in the slider container box.  The
+"knob" or "thumb" of the slider appears to slide on top of this color
+gradient. 
+
+The color gradient effect is built-up using a combination of multiple pens
+and half-tone dithering.  The application must tell the slider exactly
+which pens to use in creating the gradient effect, and in what order to
+use them. Essentially, it does this by passing an array of pens
+(terminated by ~0, just like a PenSpec) to the slider.  The first pen in
+the array is used as the color at the top of the slider (or left, if it is
+horizontal), and the last color in the array is used at the bottom (or
+right).  The other pens will be used at evenly spaced intervals in
+between.  Dithering is used to smoothly fade between the pens, allowing
+the illusion of a continuous change in color. 
+
+Here are the main tags supported by the gradient slider class:
+
+GRAD_MaxVal.  Lets you set the maximum value supported by the slider.
+This must be in the range $0..$FFFF. 
+
+GRAD_CurVal.  Lets you set the current value of the slider.  This should
+be in the range 0..GRAD_MaxVal. 
+
+GRAD_PenArray.  Lets you specify an array of pens that the slider should
+use to create its gradient background.  The array can contain any number
+of pens, and is terminated with a pen value of ~0.  These pens can be
+allocated as shared, since their RGB value is not altered by the slider.
+The first pen is used on the top or left of the slider, and the last pen
+is used on the bottom or right.  All other pens are evenly spaced out and
+used in between.  Dithering is used between the pens to enhance the
+smoothness of the gradient transition. 
+
+	A NULL pen array causes the background of the slider to be rendered
+in the screen's background color.  A pen array containing only a single
+pen causes the background to be rendered using that pen. 
+ 
+
+
+
+
+New File Systems
+================
+The V39 ROM file system supports 6 different disk formats:
+
+   o DOS\0 This is the traditional Amiga file system.  It has 488 bytes of
+data per block.  It offers a high level of redundancy and validation which
+makes it very reliable.  It is also fairly slow. 
+
+   o DOS\1 This is the original Fast File System introduced in 1.3.  It
+uses a disk layout quite similar to DOS\0, except it forgoes some
+redundancy in the name of speed.  It stores 512 bytes per block, and runs
+substantially faster than DOS\0. 
+
+   o DOS\2 This is an international flavor of DOS\0.  The only difference
+between this format and DOS\0 is the hashing algorithm used to locate the
+files and directories on the disk.  DOS\0 has a bug in dealing with making
+international characters case-sensitive.  DOS\2 corrects this bug, and is
+otherwise identical to DOS\0. 
+
+   o DOS\3 This is an international flavor of DOS\1.  The only difference
+between this format and DOS\1 is the hashing algorithm used to locate the
+files and directories on the disk.  DOS\1 has a bug in dealing with making
+international characters case-sensitive.  DOS\3 corrects this bug, and is
+otherwise identical to DOS\1. 
+
+   o DOS\4 This is a directory-caching version of DOS\2.  It has the same
+general disk layout, with the addition of special directory cache blocks.
+These cache blocks store the contents of each directory.  The advantage of
+this is that getting a directory listing can be an order of magnitude
+faster than on normal DOS\2 disks.  The directory caches require a slight
+amount of disk space, and maintaining them slightly slows down file
+creation, deletion, and update.  This file system is mostly meant for
+floppies, as it doesn't generate a very noticeable performance increase on
+hard drives. 
+
+   o DOS\5 This is a directory-caching version of DOS\3.  It has the same
+general disk layout, with the addition of special directory cache blocks.
+These cache blocks store the contents of each directory.  The advantage of
+this is that getting a directory listing can be an order of magnitude
+faster than on normal DOS\3 disks.  The directory caches require a slight
+amount of disk space, and maintaining them slightly slows down file
+creation, deletion, and update.  This file system is mostly meant for
+floppies, as it doesn't generate a very noticeable performance increase on
+hard drives. 
+
+Disk Block Format.  Here are some notes concerning changes to the disk
+block format required by the new SetOwner() call, and more importantly the
+changes present in DOS\4 and DOS\5 to support directory caching.  The
+format of root blocks is unchanged under V39. 
+
+The format of file header blocks is slightly different in order to store
+owner information.  One of the reserved fields is now being used:
+
+struct FileHeaderBlock
+{
+    ULONG  fhb_Type;         // T.SHORT
+    ULONG  fhb_OwnKey;	     // key of this block
+    ULONG  fhb_HighSeq;      // total blocks in file
+    ULONG  fhb_DataSize;     // number of data block slots used
+    ULONG  fhb_FirstBlock;   // first block in this file
+    ULONG  fhb_Checksum;     // checksum of this block
+
+    ULONG  fhb_HashTable[];  // variable number of hash table entries
+
+    ULONG  fhb_Reserved      // always 0
+    ULONG  fhb_OwnerXID      // owner UID/GID
+    ULONG  fhb_Protect       // protection bits
+    LONG   fhb_ByteSize      // total size of file in bytes
+    char   fhb_Comment[92];  // comment as a BCPL string
+    ULONG  fhb_Days;         // creation date and time
+    ULONG  fhb_Mins;
+    ULOGN  fhb_Ticks;
+    char   fhb_FileName[36]; // filename as BCPL string
+    ULONG  fhb_Link;         // pointer to object header is linked to
+    ULONG  fhb_BackLink;     // pointer to previous object in link chain
+    ULONG  fhb_HashChain;    // next entry with same hash value
+    ULONG  fhb_Parent;       // pointer back to parent directory
+    ULONG  fhb_Extension;    // 0 or pointer to first extension block
+    ULONG  fhb_SecType;      // ST.FILE
+};
+
+User directory blocks were modified to add the same owner information as
+for file header blocks.  Under DOS\4 and DOS\5, the user directory blocks
+also point to the new directory cache blocks. 
+
+struct UserDirectoryBlock
+{
+    ULONG  udb_Type;         // T.SHORT
+    ULONG  udb_OwnKey;       // key of this block
+    ULONG  udb_SeqNum;       // highest seq (always 0)
+    ULONG  udb_DataSize;     // always 0
+    ULONG  udb_NextBlock;    // always 0
+    ULONG  udb_Checksum;     // checksum of this block
+
+    ULONG  udb_HashTable[];  // variable number of hash table entries
+
+    ULONG  udb_Reserved;     // always 0
+    ULONG  udb_OwnerXID;     // owner UID/GID
+    ULONG  udb_Protect;      // protection bits
+    ULONG  udb_Junk;         // not used (always 0)
+    char   udb_Comment[92];  // comment as a BCPL string
+    ULONG  udb_Days;         // creation date and time
+    ULONG  udb_Mins;
+    ULONG  udb_Ticks;
+    char   udb_DirName[36];  // name as a BCPL string
+    ULONG  udb_Link;         // pointer (key number) to object linked to
+    ULONG  udb_BackLink;     // back pointer to previous hard link header
+    ULONG  udb_HashChain;    // next entry with same hash value
+    ULONG  udb_Parent;       // pointer back to parent
+    ULONG  udb_DirList;      // DOS\4 and DOS\5 use this for the dir cache
+    ULONG  udb_SecType;      // ST.USERDIR
+};
+
+A new block type added in support of DOS\4 and DOS\5 is the file list
+block.  This is where directory information is cached by the file system.
+When looking at a file list block, is it critical to check the fhl_Type
+field of the block to ensure that it is a known block format.  Unknown
+block formats should be ignored.  On a DOS\4 and DOS\5 partitions, the
+file system is able to rebuild cache blocks if it finds older versions
+present, or if it finds no cache block for a given directory. 
+
+struct FileListBlock
+{
+    ULONG  fhl_Type;       // T.DIRLIST
+    ULONG  fhl_OwnKey;     // key of this block
+    ULONG  fhl_Parent;     // key of parent directory
+    ULONG  fhl_NumEntries; // amount of data on this block
+    ULONG  fhl_NextBlock;  // next block in sequence of file list blocks
+    ULONG  fhl_Checksum;   // checksum of this block
+};
+
+Following the above structure on a disk block comes the actual cache
+information for the directory.  There is one cache entry for every file
+and directory within the cache.  These entries vary in size based on the
+length of the file name and comment for the entry.  A cache entry looks
+like:
+
+struct ListEntry
+{
+    ULONG fle_Key;	  	      // Key (fhb block) of file
+    ULONG fle_Size;	       // size in bytes
+    ULONG fle_Protection; // protection bits
+    ULONG fle_OwnerXID;	   // owner info
+    UWORD fle_Days;	       // date (allows 179 years)
+    UWORD fle_Min;	        // 0..(60*24 - 1)
+    UWORD fle_Tick;	       // 0..3599
+    UBYTE fle_Type;	       // ST.XXXXX (all fit in a byte)
+    char  fle_FileName[]; // variable length BCPL string
+    char  fle_Comment[];  // variable length BCPL string
+};
+
+These are the values for the various constants referred to above:
+
+// block type constants
+#define T.DELETED 1
+#define T.SHORT   2
+#define T.LONG    4
+#define T.DATA    8
+#define T.LIST    16
+
+DCFS_REV		1
+DIRLIST_KEY	32
+DIRLIST_MASK	0xffffffe0
+T.DIRLIST	(DIRLIST_KEY | DCFS_REV)
+
+ST.FILE     -3
+ST.ROOT     1
+ST.USERDIR  2
+
+
+
+DOS Workarounds
+===============
+
+V37 dos.library has a few important bugs.  These bugs are fixed in V39,
+and it is easy to work around many of these bugs under V37 to make sure
+you don't get into trouble. 
+ 
+AttemptLockDosList().  Under V37, AttemptLockDosList() would sometimes
+return 1 on failure instead of NULL.  To check for failure of
+AttemptLockDosList(), simply use:
+
+   dl = AttemptLockDosList();
+   if (!dl || (dl == (struct DosList *)1))
+       /* failed */
+
+FGets().  Under V37, FGets() will overrun the buffer you give it by one
+byte, if it doesn't encounter a line feed or EOF before filling up your
+buffer.  The work around is very simple: pass buffersize-1 to FGets(). 
+
+ParsePatternNoCase().  Until V39, ParsePatternNoCase() did not correctly
+treat character classes as case-insensitive.  That is [a-z] was different
+than [A-Z].  The work around for this bug is to simply convert all
+characters of the pattern to upper case before passing it to
+ParsePatternNoCase().  Just use the utility.library/ToUpper() function to
+convert all characters of the pattern to upper case. 
+
+SetVBuf().  Until V39, the SetVBuf() function didn't do anything.
+Starting with V39, it actually does in fact set the buffer sizes.  If you
+use any of the buffered DOS IO calls, you can get a noticeable increase in
+performance by increasing the buffer size of your files.  A good size is
+4K.  You can simply add a SetVBuf() call after opening each of your files.
+It won't do anything under V37, and will work under V39.  In most cases,
+it is not even necessary to check for failure of SetVBuf().  When the call
+fails, it just leaves the file handle with the same buffering it had
+previously.  That's fine, you just won't get the performance increase for
+that run of the program. 
+
+SetVBuf() was not activated in the initial release of 3.0, it only becomes
+available with 3.1. 
+
+
+Commodities Library
+===================
+
+The commodities.library underwent a major overhaul in V38.  The result is
+a much smaller, much less CPU hungry, and much less memory hungry library.
+Many bugs were also found and fixed.  Finally, a few new features were
+included.  All of the commodity programs shipped with the system were also
+revised. 
+
+ReadArgs().  Commodities now use ReadArgs() instead of the custom
+command-line parsing routines in amiga.lib.  This makes them more
+consistent with the rest of the system.  We encourage third party
+commodity writers to also switch to ReadArgs().  Keyword Synonyms.
+ParseIX() now understands many synonyms for keys and qualifiers.  The
+intent was to provide more consistent naming, and to decrease the
+likelihood the user would make a mistake while entering a key sequence.
+
+Input Events.  A bug that was found in a few applications during V39
+development was the incorrect initialization of InputEvents inserted into
+the input.device's input stream.  These events can work most of the time,
+and suddenly not work with specific applications.  Of specific interest,
+the inputEvent->ie_SubClass was found to often contain garbage.  This
+field should generally be set to 0.  Another field that is often
+incorrectly initialized is the ie_TimeStamp field. Make sure this field
+has something meaningful in it.  Note that using the IND_WRITEEVENT
+input.device command automatically initializes the ie_TimeStamp field. 
+
+Bugs In commodities.library.  Under V37, input events output by translator
+objects were inserted into the input stream after the commodities.library
+input handler.  This was contrary to the documentation.  Starting with
+V38, events generated are inserted immediately following the translator
+object.  This means commodity objects coming after the translator now get
+to see the translated events, while in V37, they wouldn't. 
+
+Another bug with translator objects is that they insert their attached
+list of input events in reverse order.  This cannot be fixed due to
+compatibility problems.  It is easily worked around by arranging the input
+events in the reverse order of how you want them to be inserted.  The
+InvertString() function in amiga.lib generates an inverted list of input
+events, which is just fine for translator objects. 
+
+Starting with V39, input events generated by translator objects are
+stamped with the same time as the input event that activated the
+translator.  This helps applications that look at the time of input
+events. 
+
+In V38, the ParseIX() function has a bug which prevents the following keys
+on the numeric keypad from being used in commodities: .  9 ( ) / * +.
+This bug is fixed in V39. 
+
+Until V39, input events of type IECLASS_NEWPOINTERPOS never got their
+extended tag list data copied when it needed to be.  This can cause
+general confusion or crashes if a sender object is used on an event of
+that type.  The only solution is to refrain from sending messages of type
+IECLASS_NEWPOINTER. 
+
+Until V39, the InvertKeyMap() function never initialized the ie_SubClass
+and ie_TimeStamp fields of the input event it created.  The workaround to
+this bug is simple:
+
+     inputEvent->ie_SubClass           = 0;
+     inputEvent->ie_TimeStamp.tv_secs  = 0;
+     inputEvent->ie_TimeStamp.tv_micro = 0;
+     if (InvertKeyMap(ansiCode,inputEvent,NULL))     ...
+
+
+Mount Lists
+===========
+
+The Mount procedure got a major overhaul in V38.  The major change from
+the user's perspective is that the handlers that get mounted in the system
+can now be controlled exclusively through Workbench by dragging icons
+around.  This is especially important in light of CrossDOS. 
+
+New File Format.  Although the traditional DEVS:MountList file is still
+fully supported, a new method of storing mount information is now
+recommended.  The new format involves simply splitting up the various
+entries that used to be in a mountlist, into separate files.  Each file
+controls a unique handler.  The format for the information in the mount
+files is the same as what is used in a traditional MountList with three
+exceptions.  For example:
+
+     /* Aux-Handler mount entry */
+     Handler   = L:Aux-Handler
+     Stacksize = 1000
+     Priority  = 5
+
+The differences with old style MountLists are as follows:
+
+   	o Only a single device can be defined per file.
+   	o The name of the device is not specified in the file and is
+          instead the same as the name of the file. 
+	o The # at the end of the entry can now be omitted.
+
+Every parameter that can be specified in a mount file can also be
+specified in the tooltypes for the icon of the mount file.  The parameters
+in the tooltypes override any equivalent parameter setting present in the
+mount file.  The format for the tooltypes is straightforward.  For
+example:
+
+	LOWCYL=0
+	HIGHCYL=79
+
+ This lets the Workbench user easily control certain attributes associated
+with any given mount entry.  For example, the WB user can easily set the
+size of RAD from tooltypes. 
+
+ If the user wishes to only use your handler once in awhile, he can drag
+the icon for the handler in the Storage drawer.  This prevents the handler
+from being mounted on every boot.  If the user wants to use the handler
+for a given session, he can then simply double-click on the mount entry
+icon to get it mounted. 
+
+ It is fairly simple to create an installation procedure that deals with
+both old style and new style mount files:
+
+if (V38)
+   {
+   /* Create a mount entry file.  If the user indicates he wants to use the
+    * handler permanently, put it into DEVS:DOSDrivers.  Otherwise, just put
+    * it into SYS:Storage/DOSDrivers.  Don't forget to provide an icon for
+    * the mount entry.
+    *
+    * If the mount entry is in DEVS:DOSDrivers, it will get mounted
+    * automatically when the system is rebooted.  The user can also mount
+    * it for the current session by double-clicking on it.
+    */
+   }
+else /* V37 or before */
+   {
+   /* Create an old-style mount entry and append it to DEVS:MountList.
+    * Add a Mount statement in the user-startup of the system.
+    */
+   }
+
+File System Resource List.  Mount now has the ability to fish out file
+systems from the FileSystem.resource list.  When mounting a file system,
+Mount first look in the FileSystem.resource to see if the system already
+contains a file system of the correct DOS type.  If there is such a file
+system, its seglist is used for the new handler. 
+
+For example, the CrossDOS file system registers itself in the
+FileSystem.resource the first time it is used.  Any subsequent attempts to
+mount a handler having the same DOS type as the CrossDOS file system
+results in that handler using the same seglist as the original CrossDOS
+handler. 
+
+If a file system seglist is reentrant, it should be added to the
+FileSystem.resource list of file systems, which will enable it to be used
+in the manner described above.  Be sure the seglist is totally reentrant
+before doing this (no global variables).  Consult the Rom Kernal manual to
+learn how to add a file system to the FileSystem.resource list. 
+
+The new FORCELOAD keyword can be specified in mount entries.  When its
+value is set to 1, it tells mount to always load the file system for this
+handler from disk, even if it is present in the FileSystem.resource list.
+This can be quite handy during the testing phase of a handler. 
+
+Unit Keyword.  Stream handlers have always had the advantage of being able
+to let the user provide startup arguments to the handler via the Startup
+keyword.  For example:
+
+   Startup = "this is a bunch of options"
+
+The value of the parameter is available to the handler as a BSTR in the
+dol_Startup field of the handler DosList structure.  This only works for
+stream handlers though, file system handlers make use of the dol_Startup
+field as a BPTR to the FileSysStartupMsg created for them by the Mount
+command. 
+
+The Unit keyword can now be used to passed textual options to a file
+system handler.  If a string is specified in the mount entry, then the
+fssm_Unit field of the file system's FileSysStartupMsg will be a C pointer
+to the NULL-terminated argument string, instead of being the traditional
+unit number.  New Values For GlobVec.  The GlobVec keyword in a mount list
+can now be set to -2 and -3 in addition to the other values already
+supported.  Here is a table of possible values:
+
+GlobVec
+Value	Meaning
+  0 	Default global vector, used for handlers written in BCPL.
+	Startup packet comes in a register. 
+ -1	No global vector, used for C and ASM handlers.
+	Process has to wait for startup packet. 
+ -2	Same as -3, except for handlers written in BCPL.
+ -3	No global vector, used for C and ASM handlers.
+	The difference with -1 is that the handler can do DOS IO prior to
+	returning its startup packet.  On the flip side, the handler is
+	responsible for making sure there is only one instance of itself
+	loaded by providing correct arbitration around the poking of the
+	dol_Task field of the DosList structure.  With a GlobVec of -1,
+	this is taken care of by DOS. 
+ 
+Even though the values -2 and -3 are only allowed starting with the V39
+Mount command, the V37 dos.library handles those values correctly.  It's
+just that prior to V37, the Mount command would refuse to process these
+values. 
+
+
+Version Command
+===============
+
+There has been some confusion about what the format of version strings
+are. The exact format is detailled in the Amiga User Interface Style Guide
+on page 110.  The format is:
+
+	$VER: <name> <version>.<revision> (dd.mm.yy)
+
+The string starts with $VER: followed by a space, followed by <name>.
+<name> is the name of the program.  <name> can NOT contain any spaces.
+You can use underscores to achieve a similar effect. 
+
+After <name> comes a single space, followed by <version>.  <version> is
+the major version number for the program.  There should be no leading
+zeros. 
+
+After <version> comes a single space, followed by <revision>.  <revision>
+is the minor version number for the program.  There should be no leading
+zeros. 
+
+Following the revision number comes a space, and then the date.  The date
+is specified in numeric form only, with no leading zeros on any of the
+components.  First comes the day of the month, then the month, then the
+two digits year.  In the future, a four digit year format will also be
+supported, but not yet. 
+
+Embedding a version string in the exact format described above will let
+the C/Version command find the version string.  In the future, there will
+be a system call to enable applications, and other system tools, to obtain
+the version information from files easily. 
+
+ROM Tags.  The version command not only looks for the $VER: version
+strings, it also search executable files for standard ROM tags.  ROM tags
+only contain a version number, they have no revision or date fields.  The
+recommended approach is to store a pointer to a version string in the
+RT_IDSTRING field of the ROM tag. This string should be in the same format
+as the normal version string, except without the "$VER: " prefix. 
+ 
+An executable file containing a ROM tag with a properly initialized
+RT_IDSTRING field does not need any other version information in it, such
+as a separate $VER-style string. 
+ 
+Leading Zeros.  Leading zeros are not supported as part of the version and
+revision numbers. So "2.04" is not a valid version/revision pair as far as
+the version command is concerned.  The reason this is so is because of the
+VERSION and REVISION command-line options of the Version command.  These
+allow the version and revision of a file to be checked by a script such
+as:
+
+   Version asl.library VERSION 38 REVISION 4
+
+The above command will return 0 if asl.library is greater or equal to
+38.4, and 5 if it is not.  Specifying:
+
+   Version asl.library VERSION 38 REVISION 04
+
+Does the same thing.  This means that from the standpoint of the Version
+command, 2.04 is the same as 2.4, and thus 2.04 evaluates as being greater
+than 2.1, which is not the desired effect.  So, the version and revision
+numbers must not be treated as a floating-point number, but as two
+separate and distinct integers. 
+
+This brings up the concept of user versions and internal versions.  V37 is
+known to the public as Release 2.04, and V39 is known as 3.0.  All the
+version strings in the system software use version strings starting with
+V39.  The recommended approach is as follows:
+
+   o Assign your products user-space numbers of the form 2.04 and the like. 
+
+   o Assign the various components of your distribution the same version
+numbers as for your product.  For example, "2". 
+
+   o Assign each individual components of your distribution their own
+unique, monotonically increasing revision numbers.  These numbers have
+nothing to do with the user- space number of your product as a whole. 
+
+An example is in order.  Assume a word processor called
+"SliceAndDiceWord", which is at version 4.03.  All the files composing the
+distribution would have a version number of "4", and a file-specific
+revision number:
+
+   Package number : SliceAndDiceWord 4.03
+   Main executable: SADW 4.1423
+   Support library: SADW.library 4.4129
+   README file    : SADW.README 4.6
+ 
+When SliceAndDiceWord 5.0 comes out, all the version numbers of the files
+included with the distribution get bumped to 5, and the revision numbers
+start at 0 again. 
+ 
+
+Miscellaneous
+=============
+
+This section presents miscellaneous tidbits of information worth noting
+when developing applications. 
+
+Overscan Names.  Starting with V38, the two user-settable overscan regions
+are known as "Text Size" and "Graphics Size".  Please use the following
+names in your user documentation:
+
+	   OSCAN_TEXT      	-->  "Text Size"
+	   OSCAN_STANDARD  	-->  "Graphics Size"
+	   OSCAN_MAXIMUM   	-->  "Extreme Size"
+	   OSCAN_VIDEO     	-->  "Maximum Size"
+
+Audio Beep.  Starting with V38, the system provides standard support for
+audio beeps, and complete sampled sounds, as a replacement for
+DisplayBeep().  You may wish to rely exclusively on this feature instead
+of providing your own application-specific control over an equivalent
+feature. 
+
+ToolType Comments.  We strongly encourage you to follow the convention
+adopted in V38 with respect to specifying all tooltypes supported by an
+application within the icon.  Any tooltypes not in use can be commented
+out by putting a set of ( ) around the tooltype.  This causes Workbench to
+ignore the tooltype, yet still leaves it there for the user to see and
+uncomment. 
+
+Keymap selection.  If you wish to offer application-specific control over
+the keymap being used, you have to load the keymaps you wish to use from
+disk yourself.  Some applications were using the SetMap command to load
+keymaps into memory for them.  SetMap is no longer part of the system, so
+this technique will no longer work.  The DevCon disks contain an example
+showing how to load keymaps from disk. 
+
+Note that if you wish to offer a list of keymaps to the user, you should
+be looking in the KEYMAPS: assign list for the available keymaps.  To work
+under V37, If this assign list doesn't exist, you can look in
+DEVS:Keymaps. The example code shows how this can be done. 
+
+
+
+
+Appendix A: V39 Disk Changes
+============================
+
+Following is a description of most of the important changes made to the
+disk-based system software between V38 and the initial release of V39.
+This doesn't cover changes made to modules covered in other readmes, such
+as datatypes and AmigaGuide. 
+
+
+C/Install
+
+  o Doing "INSTALL DF0: CHECK" on a disk formatted with dir cache now
+    reports the disk as either "DC-OFS" or "DC-FFS" as appropriate.
+
+C/IPrefs
+
+  o Requires Kickstart V39 and handles the new palette, pointer, and
+    wbpattern preferences.
+
+  o Is smarter about when it needs to reset the WB screen.  Now sends an
+    initial IP_SCREENMODE message to Intuition to force the initial Workbench 
+    screen to be interleaved even if there is no screenmode.prefs file.
+
+  o Now uses utility.library 32-bit math routines and uses datatypes.library 
+    to load sound samples instead of custom 8SVX code.
+
+  o Causes much less screen flashing when changing fonts.  No longer has the 
+    QUIT/S command-line option.  (Removing this option allows a few K of RAM 
+    to be saved in every machine.  Gives better error messages when it can't 
+    find a font or a picture.
+
+
+C/Mount
+
+  o Added support for GlobVec of -2 and -3.
+
+  o No longer considers empty strings an error.  This allows something like:
+
+      Device = ""
+
+    to work.  This fix will be helpful to the Envoy software.  Note that this
+    bug is in V38, so there will soon be many many Mount commands out there
+    that don't support empty strings.
+
+C/RequestChoice
+
+  This is a new C: program that lets AmigaDOS and ARexx scripts use the
+  Intuition EasyRequest() feature.  The template is:
+
+    TITLE/A,BODY/A,GADGETS/M,PUBSCREEN/K
+
+    TITLE
+    Specifies the title of the requester.
+
+    BODY
+    Specifies the text of the requester.  Linefeeds can be embeeded using
+    *n. 
+
+    GADGETS
+    Specifies the labels for the different gadgets at the bottom of the
+    requester.
+
+    PUBSCREEN
+    Lets you specify the name of a public screen to open the requester on.
+
+    The number of the selected gadget is printed at the console on exit,
+    and is returned as the secondary return value (seen as the Result2
+    variable in the Shell).
+
+
+
+C/RequestFile
+
+  This is a new C: program that lets AmigaDOS and ARexx scripts use the ASL
+  file requester.  The template is:
+
+    DRAWER,FILE/K,PATTERN/K,TITLE/K,POSITIVE/K,NEGATIVE/K,ACCEPTPATTERN/K,
+    REJECTPATTERN/K,SAVEMODE/S,MULTISELECT/S,DRAWERSONLY/S,NOICONS/S,
+    PUBSCREEN/K
+
+    DRAWER
+    Specifies the initial contents of the Drawer gadget.
+
+    FILE
+    Specifies the initial contents of the File gadget.
+
+    PATTERN
+    Standard AmigaDOS pattern.  Specifies the initial contents of the Pattern
+    gadget.  Not providing this option causes the file requester not to have
+    any Pattern gadget.
+
+    TITLE
+    Specifies the title of the file requester.
+
+    POSITIVE
+    Specifies the text to appear in the positive (left) choice in the file
+    requester.
+
+    NEGATIVE
+    Specifies the text to appear in the negative (right) choice in the file
+    requester.
+
+    ACCEPTPATTERN
+    Specifies a standard AmigaDOS pattern.  Only files matching this pattern
+    will be displayed in the file requester.
+
+    REJECTPATTERN
+    Specifies a standard AmigaDOS pattern.  Files matching this pattern will
+    not be displayed in the file requester.
+
+    SAVEMODE
+    Specifying this option causes the requester to operate in save mode.
+
+    MULTISELECT
+    Specifying this option causes the requester to allow multiple files to be
+    selected at once.
+
+    DRAWERSONLY
+    Specifying this option causes the requester to not have a File gadget.
+    This effectively turns the file requester into a directory requester.
+
+    NOICONS
+    Specifying this option causes the requester never to display icons (.info)
+    files.
+
+    PUBSCREEN
+    Lets you provide the name of a public screen to open the file requester on.
+
+  The selected files are printed on the console at exit, enclosed in double
+  quotes and separated with spaces.  The command generates a return code of 0
+  if the user selected a file, or 5 if the user cancelled the requester.
+
+C/SetFont
+
+  o Now sends ESC-C to the console handler only after doing SetFont() in the
+    console window's rastport.  The only reason SetFont ever worked was by
+    luck, since the escape sequences were buffered by DOS and flushed only
+    after the program exited.
+
+  o No longer crashes when passed a font name with more than 80 characters.
+    Now returns with ERROR_BAD_NUMBER if asked for a font < 4 points.
+    No longer opens console.device.
+C/SetPatch
+
+  o Activates AA chips.
+
+  o On some systems, NMI interrupts could be caused due to hardware
+    bugs.  These NMIs can cause software/hardware to perform incorrectly
+    and has caused major performance problems in some systems.
+    In the V37 ROM, the NMI vector pointed at a generalized routine
+    that saved all registers, does some work which ends up doing nothing,
+    restores all registers, and exits.  This patch will, under V37 ROMs,
+    move that vector to point directly at an RTE.
+
+  o SetPatch no longer will read the longword after the end of each of
+    its hunks.
+
+  o Now checks for the CPU type before trying to open the 68040.library
+    This is so that the library does not even get loaded if you don't
+    need it.  (The 68040.library also does the check.)
+
+  o Does not turn on the caches if the intruction cache is not
+    already on.  This is such that the bootmenu option will not
+    be "undone" by SetPatch.
+
+C/Version
+
+  o Now does versions of gadget and datatypes classes.
+
+  o Significant change in behavior required when not using the standard
+    version string format:
+
+    Junk following the date parameter is printed whenever the FULL option
+    is provided on the command line.  Incorrectly formatted components of 
+    a version string are printed whenever the FULL option is provided.
+
+    Note that as always, specifying incorrectly formatted version strings
+    will cause the VERSION and REVISION command line options of the Version
+    command not to work as expected.  Basically, using these keywords,
+    will result in output like "2.1 < 2.04", which is not what is usually
+    expected.
+
+    The incorrect version string formats are not supported by the
+    Installer.  It will behave much like the VERSION and REVISION cmd-line
+    options of the Version command.
+
+Classes/Gadgets/colorwheel.gadget
+
+  The colorwheel.gadget is a new BOOPSI class to create color wheels to allow
+  color selections by the user.  See colorwheel.doc for more info.
+
+Classes/Gadgets/gradientslider.gadget
+
+  The gradientslider.gadget is a new BOOPSI class to create sliders having a
+  gradient background.  This is to be used in combination with the
+  colorwheel.gadget.  See gradientslider.doc for more info.
+
+Devs/DataTypes 
+
+  This new directory in V39 is the place where a user puts datatypes.library 
+  descriptor files.
+
+Devs/printer.device
+
+  o Added small amount of code to support AA 8-bit HAM mode printing.
+
+  o Also now uses GetBitMapAttr() if running under V39 to obtain dimensions 
+    of source BitMap structure.
+
+L/FastFileSystem
+
+  o Equivalent to the V39 ROM file system, including DOS\5 support.  See ROM
+    release notes for more info.
+Libs/68040.library
+
+  This is a support library for 68040 systems.  It addresses a number of
+  issues with that CPU.  There are no publically callable functions in this
+  library.
+
+Libs/amigaguide.library
+
+  The amigaguide.library is a new system module providing a means whereby
+  developers can easily add on-line help to their applications.  See
+  amigaguide.doc for more info.
+
+  The amigaguide.library was previously available for use in commercial
+  applications.  This is the first release of the library as a part of the core
+  operating system.  Changes since the previous release include:
+
+  o All new V39-only version uses datatypes.library for object handling.
+
+  o Now has an AppWindow, plus an "Open..." menu item.  To open a new
+    document, AmigaGuide performs a LINK to it, so that you can RETRACE back
+    through the documents that you have opened.
+
+  o Now supports word wrapping and proportional fonts.
+
+  o Now supports font attributes.
+
+  o Now supports embedded objects.  This means that you can
+    LINK to any type of object that the user has a DataTypes
+    descriptor and class for---such as pictures and animations.
+
+  o Modified how files are located, to search for a localized help file.  Now
+    searches in the following order.  For each preferred language
+
+	PROGDIR:Help/<language>/<name>
+	HELP:<language>/<name>
+
+        PROGDIR:<name>
+        <name>
+
+    This matches how locale.library searches for catalog files.  For
+    compatibility, each directory from the AmigaGuide/Path environment
+    variable are also searched.
+
+  o Renamed S:help.guide to HELP:<language>/Sys/amigaguide.guide
+
+  o All sub-databases are now opened localized.
+
+Libs/asl.library
+
+  o Added support for the new WA_HelpGroupWindow Intuition tag.  ASL requesters
+    now inherit the group id of their parent window.
+
+  o Removed V37 code.  The library now requires V39.
+
+  o Added support for OSCAN_VIDEO in the screen mode requester.
+
+  o Fixed rendering bug with selected items in the file requester.  Depending
+    on the size of the requester, sometimes the rendering didn't occur
+    correctly.  Fixed font requester layout bug with checkmark labels using 
+    certain fonts.
+
+  o Now monitors the Size numeric gadget more closely in the font requester.
+
+  o ASL now uses scaled checkmark imagery in the font and screenmode
+    requesters.  Also now uses ROM busy pointer instead of custom one.
+
+Libs/commodities.library
+
+  o Fixed ParseIX() bug introduced in V38 preventing the following keys on
+    the numeric keypad from being used in commodities: 9 ( ) / * + .
+
+Libs/datatypes.library
+
+  datatypes.library is a new system module providing transparent data
+  handling abilities to applications.  Application developers can register
+  their data format with datatypes.library and provide a class library for
+  handling their data within other applications.  See datatypes.doc for more
+  information.
+
+Libs/diskfont.library
+
+  o Marks DUPLICATE fonts using one of many free bits in the TextFont
+    Extension.  These are fonts opened by diskfont, but match some other
+    font already on the public font list by name, Y size, relevant style,
+    and relevant flags.  The font is only marked as a duplicate if a
+    NON-DUPLICATE occurence of this font already exists.
+
+    DUPLICATE fonts are ignored by OpenFont() if the caller is not
+    tag aware even if there is a font on the list which has a better
+    implied DPI.
+
+  o Tightened up requirements for source font when scaling.  Specifically,
+    an already scaled RAM font of an exact Y size match but differing by
+    DPI will not be used as the source for a bitmap scaled font (adding
+    scale error, to scale error).
+
+  o The code which generates the outline fonts now does comparison for
+    OT_DotSize when it calls OpenFont(); essentially honoring the caller's
+    request for an OT_DotSize other than the default that diskfont will
+    provide when creating outlined fonts.  This makes it possible to have
+    multiple outline fonts which differ only by OT_DotSize.
+
+  o Underlined outline fonts are now supported if the engine can manage it
+    when rendering the glyphs.  New tags in diskfonttag.[hi] were added for
+    this purpose.  V39 diskfont will ask for underlining if requested in the
+    TextAttr, or TTextAttr, but if not supported by the engine, then it will
+    simply try to open, or create a non-underlined version.  So there is no
+    change in behavior for bullet fonts in that it already opens a
+    non-underlined version.  The difference is by asking OpenFont() for a
+    non-underlined version, it does not decide to create another copy because
+    of the result returned from WeighTAMatch().
+
+    Of interest, our own Text() function when used with SetSoftStyle() does a
+    broken underline (just one pixel, but its definitely not solid), so
+    diskfont.library V39 first asks for broken underlining from the engine,
+    and then solid.  If neither form of underlining is supported, then the
+    above is true.
+
+  o Tag for algorithmic strike-through added to diskfonttag.[hi]; this
+    is another feature supported in Final Copy, and could be requested if
+    wrapped in a bullet interface.
+
+  o Underlining off, double solid, and double broken underlining also defined
+    for the new OT_UnderLined tag.
+
+    Underlining is not an intrinsic style for outline fonts.  This does not
+    actually absolutely have to be the case, but we lack a tag to indicate
+    intrinsic underlined style now, so this is not a new behavior, or
+    limitation.  The assumption being that underlining is one of those things
+    that is probably best done algorithmically by the application, or
+    for the purposes of diskfont, by the engine.  Therefore this also leaves
+    open the possibility of placing the underlining code within diskfont
+    for engines that do not support it should we wish to do so in the
+    future.
+
+Libs/iffparse.library
+
+  o Fixed three bugs in the OpenClipboard() function.  First bug was that if the
+    clipboard.device couldn't open, two calls to FreeSignal() were made
+    with uninitialized values as parameters.  The result of this was a
+    corrupt signal mask in the Task field.  Second bug what the OpenDevice()
+    was called with an IO request that didn't have a valid MsgPort pointer
+    in it.  Finally, the two message ports allocated by the function were
+    not being initialized correctly and would cause a system crash if a
+    message ever got to either of them.
+
+Prefs/#?
+
+  o Now restore task->tc_UserData on exit of prefs editor.
+
+Prefs/Font
+
+  o Default for WB icon text mode when there is no .prefs file is now JAM2
+    instead of JAM1.  This matches the ROM.
+
+Prefs/IControl
+
+  o Added Mode Promotion gadget when running on AA machines
+
+Prefs/Input
+
+  o "Show Double-Click" now operates asynchronously.  That is, while the
+    double-click sample is displayed, it is still possible to click on other
+    gadgets.
+
+Prefs/Overscan
+
+  o Now bounds check values read from prefs file against what the gfx database
+    says.  This avoids problems with V38 overscan prefs files, and with
+    running VGAOnly or not.
+
+Prefs/Palette
+
+  o Brand new interface using the colorwheel and gradientslider gadget
+    classes.  Also allows pen spec editing.
+
+Prefs/Pointer
+
+  o Now opens on the Workbench screen if it can obtain three exclusive pens.
+
+  o Allows editing of the Normal and Busy pointers and supports Low-Res and 
+    High-Res pointer resolutions.
+
+  o Uses datatypes.library for clipboard support.
+
+  o Semaphore around save during Test.  This is to prevent
+    confusing error requesters if the user presses the Test button
+    several times while waiting for the pointer to appear.
+
+  o Added "Load Image..." menu item in the "Edit" menu.
+
+  o Uses {SA_LikeWorkbench, TRUE} when using a custom screen.
+
+  o Increased width of window by 20 pixels to make room for
+    longer strings.
+
+  o Added NOREMAP tooltype and command-line option.  This causes paste
+    and import image to not remap.
+
+Prefs/ScreenMode
+
+  o Now skips the default monitor when scanning the mode list instead
+    of skipping PAL or NTSC.  This means that the prefs file will never
+    contain "default monitor" as a mode, it will always contain an
+    explicit mode.
+
+Prefs/Sound
+
+  o Now uses datatypes.library for sound loading and playing.  Also uses
+    a DataTypes filter in the load sample requester so that only sounds 
+    will be shown.
+
+
+Prefs/WBPattern
+
+  o Added support for picture backdrops.
+
+  o Added support for Workbench screen backdrop.
+
+  o Defined a more efficient chunk for the preference data.
+
+  o Fully supports the First4/Last4 Workbench color scheme.
+
+  o Uses datatypes.library for clipboard support.
+
+  o All internal bitmaps now max out at a depth of 3 (less memory
+    usage).
+
+  o Rearranged the gadgets.
+
+  o Semaphore around save during Test.  This is to prevent
+    confusing error requesters if the user presses the Test button
+    several times while waiting for the pattern to appear on the
+    Workbench.
+
+  o Added "Load Image..." menu item in the "Edit" menu.
+
+  o Added NOREMAP tooltype and command-line option.  This causes paste
+    and import image to not remap.
+
+S/Startup-Sequence
+
+  o Removed "Echo" statement.  That means the initial Shell window will no
+    longer be displayed on bootup on a standard system.  This means a noticeable
+    decrease in bootup time on slower machines (it takes about a second to
+    open and close the shell window).  It means even more savings in time
+    when the WB has more bitplanes.  Finally, it also looks a heck of a lot
+    more professional.
+
+  o Added C: in front of every pertinent command.  This speeds up the S-S
+    noticeably on floppy systems, since normally the current directory is
+    scanned first for a command, and then C:.  By prefixing C:, it no longer
+    checks the current directory making things a whole lot faster.
+
+  o Added deferred assign for HELP:.
+
+  o Added multi-assign of LIBS: to SYS:Classes in support of the new
+    disk-based BOOPSI classes.
+
+  o Now runs VGAOnly monitor file if it is installed.
+
+Storage/Monitors/#?
+
+  o Added DblNTSC and DblPAL in support of AA scan doubling.
+
+  o Added VGAOnly monitor.
+
+  o Added AA support throughout.
+
+System/DiskCopy
+
+  o Enabled code to correctly report read errors.  Under V38, read errors are
+    reported as write-errors.
+
+System/Format
+
+  o Requires V39.
+
+  o Added directory caching support in the form of an extra gadget in the main
+    Format window, and some new command-line options.  Command-line template
+    is now:
+
+      DEVICE=DRIVE/K/A,NAME/K/A,OFS/S,FFS/S,INTL=INTERNATIONAL/S,
+      NOINTL=NOINTERNATIONAL/S,DIRCACHE/S,NODIRCACHE/S,NOICONS/S,QUICK/S
+
+  o Uses GTLV_MakeVisible tag in its device listview.
+
+  o Fixed bug where long volume names would run off the right edge of the main
+    window by using the new GTTX_Clipped gadtools tag.
+
+System/Intellifont
+
+  o Renamed from Fountain to Intellifont.
+
+  o Bare minimum needed to fix visual bug evident when running under V39
+    gadtools; no longer uses GTLV_Selected tag, though still does not
+    use V39 style selection via GTLV_ShowSelected tag.
+
+Tools/Commodities/MouseBlanker
+
+  This is a mouse blanking commodity.  It blanks the mouse when you start typing
+  and unblanks it when the mouse is moved or any of the mouse buttons are hit.
+
+Tools/HDToolBox
+
+  o Brand new GadTools interface.
+
+  o Now determines the version number of a file system automatically instead
+    of requiring it to be entered manually.
+
+  o Fixed a great number of bugs.
+
+  o When CD_ROM drive was hooked on the SCSI bus and the disk was inserted,
+    HDToolBox hanged up beacause the program assumed only 512 bytes blocks.
+    It Now checks the size with the "READ_CAPACITY" command,
+    and if it fails, sends "INQUIRY" command and gets device type.
+    If it's a CD-ROM device, sets block size to 2048.
+
+Tools/IconEdit
+
+  o Implements the First4/Last4 Workbench color scheme.
+
+  o Uses datatypes.library for clipboard support and picture
+    loading/saving.  Therefore, you can now load any picture type
+    that you have a class for.  When loading or pasting a
+    picture, the colors are mapped to the Workbench GUI colors
+    (either 2, 4 or 8 colors).  8 color icons will work with any
+    depth Workbench screen.
+
+  o Default clipboard viewer is now "Multiview CLIPBOARD".
+
+  o Checks to see if icon already exists when saving a picture or
+    source file and won't overwrite it.
+
+  o File requester's initial position now matches the preference
+    editors.
+
+  o Now draws the coordinates in the window title bar using the
+    pen spec.
+
+  o Was reloading the icon image after save, even if save failed.
+
+  o Will now properly undo after loading a new icon image.
+
+  o Added NOREMAP tooltype.  This causes paste and import image
+    to not remap.
+
+  o Fixes Enforcer hit caused when dropping Drawer icon (without
+    a drawer) into the AppWindow.
+
+Tools/ShowConfig
+
+  o Added AA chipset support.
+
+
+Utilities/MultiView
+
+  This is a generic view-anything utility that uses datatypes.library for its
+  object handling.
+
+3.0 Installation Procedure
+
+  o It is no longer necessary to boot from the Install disk.
+
+  o Install Languages no longer exists.  This is now merged into the main
+    installation script.
+
+  o Install Printers no longer exists.  The user can easily drag a printer
+    driver icon from the Storage disk to DEVS:Printers
+
+  o The disk now includes the 68040.library, which gets copied to the HD when
+    performing an install
+
+  o The various Prod_prep scripts were enhanced and work better.
+
+  o There are many little utilities in the C: directory which aid the main
+    install script to do a better job.
+
+  Changes to the install script include:
+
+  o Requires V39 ROMs
+
+  o Now integrates the old "Install Languages" script.  When starting the
+    main install script, you are now asked whether to perform a complete
+    installation, or only update the languages.
+
+  o It now virtually always makes the right decision as to where the WB files
+    should be copied.  As a result, if the user picks Novice mode, he will not
+    be asked where the files should go.
+
+  o Now preserves the tooltypes of many icons.  This will avoid zapping the
+    stuff put there by users, making the update process much more transparent.
+
+  o Now preserves the locations of most files.  For example, if the user moved
+    Blanker in WBStartup, it will be correctly updated in WBStartup, and left
+    there.  In V38, the copy in WBStartup would be deleted and the new version
+    installed in Tools/Commodities.
+
+  o Now preserves left out icons.  The UpdateWBFiles program ensures that the
+    contents of the .backdrop file are up to date which removes the need to
+    delete the file.
+
+  o Now updates V37 font prefs files to V38/V39 format.
+
+  o Now deals with the "Storage3.0" disk
+
+  o Now asks which keymaps to install.
+
+  o Installs the 68040.library.
+
+  o Knows about systems with MapROM, and installs a special startup-sequence.
+
+  o On an NTSC system, always copies the NTSC monitor to DEVS:Monitors, and
+    copies PAL to DEVS:Monitors on PAL systems.
+
+  o When installing languages, deletes languages the user did not choose.  This
+    is to remove old V38 files that might be hanging around.
+
+  o Does better sniffing to determine whether an A2090 is present, and displays
+    extra info to inform the owner that some files need to be copied.
+
+  o Will optionally reboot the system for the user at the end of the
+    installation procedure (after asking permission first, of course).
+
+  o Asks all its questions up front.  Once the questions are answered, it
+    starts the actual installation.
+
+  o Now deletes all C= printer drivers and keymaps before starting the
+    installation process.  This was previously done right before re-installing
+    them.  This is to increase the likelihood that things will fit on the HD
+    by deleting obsolete stuff ahead of time.
+
+  o Does slightly better icon positioning to avoid things moving
+    "by themselves".
+
+  o Now copies the A2232 port-handler and A2232 aux-handler when needed.
+
+  Changes to the HDSetup script include:
+
+  o Will now partition the HD and format it automatically instead of requiring
+    a reboot.
+
+  o The partitions created are now called Workbench (HD0) and Work (HD1).
+    HD0: is created as 8M.
+
+  o DOS\3 is now used by default, and the DMA mask is set to 0xfffffffe
+    instead of 0xfffffffc
+
+  o The version number for the file system being installed on a machine is now
+    extracted from the file system load file instead of being hardcoded in the
+    prep scripts
+
+  o After completing the reselection on, reselection off, or update
+    superkickstart option, the system is rebooted automatically (after
+    asking the user of course).
+
+  o Updating an A3000 super kickstart no longer requires the user to hit
+    RETURN.  Errors are also detected now.
+
+
+
+
+Appendix B: Release 3.1 Disk Changes
+====================================
+
+Following is a description of some of the important changes made to
+the disk-based system software between Release 3 and Release 3.1.
+This doesn't cover any changes after December 1992.  Since 3.1 was
+still under development as of this writing, more changes are likely
+to be made to the software prior to release. 
+
+
+C/ConClip
+
+  o Now consumes over 3100 bytes less RAM when running.  That means over 3K
+    more RAM in every system we ship.
+
+  o Localized
+
+  o Now keeps iffparse.library and clipboard.device closed whenever they
+    are not in use.
+
+  o Added CLIPUNIT synonym to existing UNIT command-line option.  This is to
+    make it comply with the style guide and be more consistent with other
+    programs such as WBPattern.  The template is now:
+
+        CLIPUNIT=UNIT/N,OFF/S
+
+C/Copy
+
+  o Now correctly handles failure of SetProtection(), SetComment(), and
+    SetFileDate().  Because SetComment() fails on NFS and on CrossDOS,
+    SetFileDate() never was done on files, making the CLONE option not
+    fully work.  All three functions are considered failures only if
+    IoErr() reports something different than ERROR_ACTION_NOT_KNOWN.
+
+  o In case of error after a call to DupLock(), an error code was being
+    set always to ERROR_NO_FREE_STORE instead of using the result of
+    IoErr().
+
+  o The default size for the buffers used was always equivalent to (BUF=0)
+    which caused the buffers to be the size of the files being copied.
+    This was contrary to the docs, and caused problems when copying large
+    files through Envoy, as it could easily eat up all the memory in the
+    system, not leaving enough for the memory needed by Envoy.  The
+    default size is now BUF=128 which gives a 64K buffer.
+
+C/IPrefs
+
+  o Added needed support for the new display position control now offered by
+    Overscan prefs.
+
+  o If there is no icontrol.prefs file, IPrefs sets the default for Mode
+    Promotion to ON.  That means machines will have mode promotion
+    on by default.
+
+  o Now ensures that requested width, height, and depth for Workbench,
+    fall within the allowed range as defined in the graphics database.
+
+C/Mount
+
+  o Only change is the version number.  Versions 39.1 and 39.2 of this program
+    were accidentally numbered 38.1 and 38.2.
+
+C/Protect
+
+  o Fixed error reporting.  When used with wildcards, it would generate
+    errors of the form "Can't set protection for #?" instead of giving a
+    descriptive file name, and cause of error.
+
+
+C/SetPatch
+
+  o Due to a bug fix late in the game, the filesystem broke with ExAll()
+    on DCFS file systems if the lock passed in was not Examine()ed first.
+    This patch fixes this by forcing an Examine() on a lock before
+    the ExAll() is called.  It only does this on systems with V39.22
+    dos.library since only that ROM has the problem with DCFS ExAll().
+
+  o ChangeVPBitMap() was not properly doing the bitplane swizzle needed for
+    8-bit HAM mode.  The reason that this didn't show up earlier is that
+    if the relationship between the bitplane pointers was the same
+    in the original and new bitmaps, the bug would correct itself.
+    So, you would only see this bug if your memory was fragged, or if
+    some other allocations got in between the separate allocations of the
+    bitplanes.
+
+  o ScrollVPort() had the same bug as ChangeVPBitMap().
+
+    The patch locks the ActiViewCprSemaphore, swizzles the bitmap,
+    calls the old entry point, and unswizzles the bitmap, when called
+    on a HAM-8 viewport.
+
+  o The patches for graphics.library/ScrollVPort() and ChangeVPBitMap()
+    now bump the graphics revision number to 90 if it is 89.  This
+    is so that installing the setpatch on an A1200 or A4000 will not
+    break people using work-arounds for the bug.
+
+  o When calling BltBitMap() with both source and destination interleaved,
+    and a mask of -1, the low byte of d7 would be changed to the bitmap depth
+    on exit.  Patch saves d7, calls old, and restores it.
+
+  o Added the graphics monitor/view association hash patch.
+
+  o BltMaskBitMapRastPort() used to interpret the mask data incorrectly
+    if both the source and destination bitmaps were interleaved.
+
+  o Now includes the CP2024 Conner patch from the V37 SetPatch.
+
+C/Version
+
+  o Obtaining the version of printer.device while it is loaded in memory would
+    trash memory.  This is because printer.device doesn't initialize its
+    lib_IdString.  Although Version was checking for NULL, the lack of
+    string was causing problems in the output routines.
+
+  o Fixed the FILE option which was causing the version numbers not to be
+    displayed.
+
+Classes/Gadget/colorwheel.gadget
+
+  o Querying the wheel for an explicit red/green/blue value would not get the
+    most up to date brightness value from the gradient slider causing things
+    to get slightly out of sync.
+
+  o Fixed bug where trying to open the class library under 1.3/2.0 would
+    cause a system crash instead of simply failing.
+
+Classes/Gadget/gradientslider.gadget
+
+  o Fixed bug where trying to open the class library under 1.3/2.0 would
+    cause a system crash instead of simply failing.
+
+Devs/mfm.device
+
+  o Fixed small problem of the wrong return results when opening a device
+    with an invalid unit number.
+
+  o Changed the format function to update the physical track and invalidate the
+    in-memory buffer,
+
+
+L/CrossDOSFileSystem
+
+  o Booting off a CrossDOSFileSystem formatted disk does not crash an IBM
+    machine (including CrossPC).  It now presents a message "CrossDOS
+    non-bootable disk!".
+
+  o Now supports formatting a compatible MS-DOS hard disk partition.  It
+    is still not bootable.
+
+  o Now prevents an MS-DOS hard disk partition to be formatted if not
+    properly partitioned first.
+
+  o Fixed problem with method of reporting results when asked to read or
+    seek past end or beginning of file.  Now follows V37/V39 FFS method.
+
+  o Fixed problem with parsing a file or directory name with NULLs instead
+    of the usual SPACEs for blanks.  This occurs in PC-DOS not in MS-DOS.
+
+  o Fixed bug that translated extended ASCII characters incorrectly when
+    either the INTL or DANSK translation tables were selected.
+
+  o Added stack size checking.
+
+  o Fixed a bug that appeared when using the 'assign' command with this FS.
+    A DOS deadlock could occur in certain circumstances.  Added a delayed
+    volume node addition and deletion algorithm.
+
+  o Fixed a small problem of freeing memory allocated by the process spawned by
+    the FileSystem_status process.  This could cause memory shared to be reused
+    when it was still needed.  The fix was to add the memory entry list to the
+    filesystem_status process which is the last process to exit.  This only
+    occurs if the target device could not be opened.
+
+  o Fixed a problem that never showed up yet.  Internally reproduced only.
+
+L/port-handler
+
+  The main reason for this release is to fix problems that PRT: was having
+  with Envoy printing.
+
+  o Now has a version string.
+
+  o Now requires V37 ROMs.
+
+  o Now supports ACTION_IS_FILESYSTEM and ACTION_FINDUPDATE.
+
+  o Once loaded, it remains in memory permanently which fixes many problems.
+    For example, if any of SER: PAR: or PRT: had been active, double-clicking
+    on Format, DiskSalv, or CrossDOS would cause Enforcer hits, or crashes
+    on a machine not running Enforcer.  This also fixes "copy foo to PRT:"
+    when PRT: is sending data to the envoyprint.device.
+
+  o When first loaded in memory, the handler patches its seglist pointer into
+    the DOS device node of other related handlers.  That is, if the handler is
+    started as PRT:, it patches its seglist into the DOS nodes for
+    SER: and PAR:.  This means that all these devices end up sharing the same
+    seglist for the port-handler, which can save memory and disk-loading time.
+    It patches its seglist in any device node having "L:port-handler" as
+    handler name.
+
+  o This port-handler replaces both the standard port-handler on the Workbench,
+    and the A2232 port-handler.  As such, the handler supports being activated
+    through a mountlist entry, and will process the BAUD, CONTROL, DEVICE,
+    UNIT, and FLAGS keyword from a mountlist.
+
+  o Because this port-handler replaces the A2232 one, it is possible to
+    specify the baud rate and control flags when opening a serial unit.  For
+    example:  Open("SER:9600/8N1",...);
+
+
+
+L/FileSystem_Trans/#?
+
+  o Modified a few values for the INTL and DANSK translation tables to
+    default to the SPACE character for untranslatable characters instead of
+    NULLs.
+
+  o Added a Mac translation table.  This lets an Amiga read Mac ASCII
+    files.  This translation type can be selected from the CrossDOS
+    commodity.
+
+Libs/asl.library
+
+  o In screen mode requester, fixed formatting string so that horizontal scan
+    rates with a decimal value less than .1 now come out right.  That is,
+    29.02 was coming out as 29.2.
+
+  o Fixed bug where trying to open the library under 1.3 would cause a system
+    crash instead of simply failing.
+
+  o Selecting Restore in the screen mode requester now correctly resets the
+    "Overscan Type" and "AutoScroll" gadgets.
+
+  o Fixed bug where the file requester's drive LED would remain lit after
+    creating a new directory when in save mode.
+
+Libs/commodities.library
+
+  o Fixed bug present since V36.  Input events of type IECLASS_NEWPOINTERPOS
+    did not get their extended data properly copied in various places,
+    including through AddIEvents().  This resulted in the copy of these input
+    event containing pointers possibly pointing to garbage.
+
+  o Fixed bug where NEWPOINTERPOS was not considered a valid class by ParseIX().
+
+  o Input events inserted into the input food chain as a result of the action
+    of a translator object are now marked with the same time stamp as the
+    input event which activated the translator object.
+
+  o DisposeCxMsg() was accessing a global list without proper locking.  This
+    was quite nasty, since the list is typically accessed from both the
+    commodity input handler, and from commodity programs running
+    asynchronously.
+
+  o Now nulls out the ie_NextEvent field of input events it copies.  All
+    input events generated by the library are copies of other events, and
+    the ie_NextEvent value was left set to the original event's value.
+    That means commodity was spewing out a lot of input events with bogus
+    ie_NextEvent fields.  This could cause crashes and confusion.
+
+  o InvertKeyMap() now sets the ie_SubClass and ie_TimeStamp fields to 0
+    in the input events it generates.  These were being untouched which means
+    they could contain garbage.
+
+Libs/iffparse.library
+
+  o Fixed bug where trying to open the library under 1.3 would cause a system
+    crash instead of simply failing.
+
+Libs/68040.library
+
+  o During the setup of the MMU tables, if an expansion card was
+    0 bytes in size it would cause the MMU table setup to fail.
+    68040.library would continue to work but the magic MMU setup
+    that would have been needed for the Zorro-III boards would
+    not be done.  This has been fixed.
+
+Monitors/#?
+
+  o Now use a new algorithmic approach to generate the database entries.
+    The result of this is that the amount of disk space taken up by these new
+    monitors is 140 blocks, compared to 176 blocks they used to take.
+
+    More important is that the dimensions of Multiscan, Euro72, Super72,
+    DblNTSC and DblPAL are now greater than they used to be.  This is especially
+    important for DblNTSC and DblPAL, which are meant to resemble NTSC and PAL
+    as closely as possible.  The Dbl....  monitors are now 720 pixels wide for
+    MaxOScan, compared to 724 for NTSC/PAL, and the 676 they used to be!
+
+    Also, if not running with VGAOnly, the "dead" part of the display on the
+    left hand side of the screen is now useable as VideoOScan.
+
+  o Defined ScanDoubled versions of the Multiscan, Euro72 and Super72 monitors
+    for better coercion on AA machines.
+
+  o All these monitors should now work under ECS, and give even greater
+    dimensions.
+
+  o No AA modes should be in RAM on non-AA machines.
+
+  o Changed the names of the monitors from DoubleNTSC/PAL.monitor to
+    DblNTSC/PAL.monitor to be consistent with the ModeID name strings.
+
+  o All the monitors now work only with graphics.library V39.
+
+  o With Kickstart 39.106 and VGAOnly, DblNTSC/PAL screens can only be 704
+    pixels wide max, whilst under the current kickstart they are 720 pixels
+    wide.  The DblNTSC/PAL monitor now checks for this.
+
+  o Cleared up an enforcer hit with adding the A2024 after iprefs was run, and
+    promotion was enabled.
+
+  o Sprites were not being clipped properly in PAL A2024 modes when they
+    crossed the panel boundaries.  This was causing screen trashing when the
+    pointer was at certain positions because the pointer would end up in the
+    A2024's special control line.
+
+Prefs/IControl
+
+  o Removed "Preserve Colors" gadget.  The "Avoid Flicker" gadget has been moved
+    into the "Miscellaneous" gadget group instead of being by itself in the
+    "Coercion" group.
+
+  o If there is no prefs file, mode promotion is now turned on by default.
+
+Prefs/Input
+
+  o Now uses GTLV_MakeVisible tag to ensure the currently selected keymap is
+    visible in the listview.
+
+Prefs/Overscan
+
+  o On the edit screen, changed the label of the left gadget from "Use" to
+    "OK".
+
+  o Added code to support the new display positioning control.  When you enter
+    the overscan editing screen, if the mode supports it, there are four arrows
+    that cause the entire visible portion of the display to move around.  This
+    is a wonderful new feature for DblNTSC, allowing sync-dependant centering
+    of display modes.  It is also possible to move the display by using the
+    cursor keys.
+
+  o Changed the background color on the edit screen from black to dark grey.
+    This makes it much easier to detect when the display is being pushed too
+    far off the right edge of the display, as the color of the display turns
+    quite dim.
+
+  o Made the edit screen SA_Exclusive in order to avoid folks dragging it down
+    and revealing their WB.  Since the program now makes dynamic changes to
+    hsync and vsync, the WB can look bad when the edit screen is pulled down.
+
+  o Made the edit screen SA_Interleaved.
+
+Prefs/Palette
+
+  o When incapable of displaying a colored color wheel, the program now puts
+    up a gadget labelled "Color Wheel..." in place of the actual color wheel.
+    Clicking on this gadget causes the color wheel to come scrolling up from
+    the bottom of the screen until it fills the whole display.  This color
+    wheel screen lets the user edit the current color using the wheel.
+    There is a pair of "OK/Cancel" gadgets to accept or reject the new color
+    selection.  Clicking on either gadgets causes the color wheel to scroll
+    off the bottom of the display.  Kinda neat :-)
+
+  o The sample section of the program now shows a sample screen title bar.
+
+  o When opening on a custom screen, no longer has a window border and title
+    bar.
+
+  o When switching modes from 4 to multicolor and back, will no longer
+    present an empty window if it is not capable of creating its new set
+    of gadgets.  The program will exit instead.
+
+  o Selecting a color > 4 in the main palette, and switching to 4 Color
+    Settings would not correctly redraw the gradient slider to use a color
+    within the available selection.
+
+  o Now uses color conversion routines from colorwheel.gadget instead of
+    having inline duplicates.
+
+  o Fixed incorrect flags set in some menu items so that click select of
+    these items worked incorrectly.
+
+  o Was letting you select between 4 and Multicolor Settings,
+    even when running on a 4 color screen incapable of displaying the
+    multicolor settings.
+
+  o When running on an A2024 display, it no longer displays a color wheel,
+    nor lets you display one.
+
+  o Clicking in the sample section of the program causes the pen associated
+    with the item clicked on to become selected in the pen list.  That is,
+    clicking on the sample window title bar will automatically select the
+    "Active Window Title Bars" pen within the pen listview.
+
+Prefs/Printer
+
+  o Now uses GTLV_MakeVisible tag to ensure the currently selected printer is
+    visible in the listview.
+
+Prefs/PrinterPS
+
+  o The default margins for graphics printing are now 1 inch on the left
+    and right, instead of 1 inch on the left and 2 on the right (this was
+    due to a typo).
+
+  o When in the Graphics Scaling page, selecting "Last Saved" from the menu
+    would not cause the sample graphics to be redisplayed with the new values.
+
+Prefs/ScreenMode
+
+  o Fixed formatting string so that horizontal scan rates with a decimal
+    value less than .1 now come out right.  That is, 29.02 was coming out
+    as 29.2.
+
+System/Format
+  o From within the device selection listview, it was possible to double-click
+    on two different devices, and have Format accept the selection.  A check
+    is now done so that both clicks of a double-click occur on the same device.
+
+  o When formatting from Workbench, Format now ignores any trailing colons in
+    the volume name.  It would get all confused if someone tried to name
+    a disk "Hello:" instead of simply "Hello".  This fixes the
+    most common error automatically.
+
+Tools/Calculator
+
+  o Now gets the window title string from the current catalog instead of
+    having it hardcoded to "Calculator".
+
+Tools/Commoditites/ClickToFront
+
+  o Now also filters mouse clicks that come through as IECLASS_POINTERPOS
+    and IECLASS_NEWPOINTERPOS, in addition to IECLASS_RAWMOUSE.  This
+    fixes the bug where ClickToFront did not work with events generated
+    by tablet drivers.
+
+Tools/Commodities/CrossDOS
+
+  o Fixed bug where the window would not open when there was no
+    L:FileSystem_Trans directory, or no file within it.
+
+  o Fixed incorrect cleanup path in case of errors while scanning directories.
+    The bug would cause a crash the next time the window was opened.
+
+  o Now only notifies CrossDOS handler tasks of changes in settings when
+    new settings differ from the old ones.
+
+  o No longer has the CrossDOS semaphore locked when it locks the DOS device
+    list.  This could potentially cause deadlocks.
+
+  o Fixed bug where translation files were opened and read, but never closed.
+
+  o Fixed bug that would cause a crash under V37 or harmless Enforcer hits
+    under V39.  To reproduce, start the CrossDOS commodity and copy a large file
+    to PC0 (devs:Kickstart for example).  While the copy is in progress, pick
+    PC0 from the CrossDOS commodity and change its text filtering setting.  Now
+    click the close gadget of the commodity program.  The window stays open
+    until the large write operation completes.  As soon as this happens, the
+    window closes, and a crash occurs under 2.0.
+
+Tools/Commodities/FKey
+
+  o When there was a key sequence in FKey with a command such as "Insert Text"
+    with a string associated with it, switching the command to
+    something else, and coming back to "Insert Text" would cause the current
+    string to be "forgotten".  To get it back, you had to click in the
+    text gadget and press RETURN.  This is now fixed.
+
+  o Selecting a command such as "Insert Text", then typing in a string as
+    argument would cause that string to be bound to the key sequence forever.
+    That is, even if the command was switched to something like "Cycle Windows",
+    the string argument would be saved out to disk and reloaded in memory
+    the next time the program ran.  This was incorrect as the command didn't
+    have anything to do with the string.  String arguments are now discarded for
+    those commands that don't support them.
+
+  o The active key sequence is now correctly highlighted in the listview.
+
+Tools/HDToolBox
+
+  o Now supports Host ID in "Partitioning" screen.  Now multiple machines
+    can share a single disk using different partitions.
+
+  o Added CHECKBOX_KIND gadget for allowing a block size other than 512 bytes
+    in "File System Maintenance".  To change file system block size in
+    "File System Characteristics", select this gadget first.
+
+  o Changed from BUTTON_KIND gadget to CYCLE_KIND gadget for "File System
+    Type".  They get labelled with their dostype as found in the file system
+    resource list.
+
+  o Added CHECKBOX_KIND gadgets for "Fast File System", "International Mode"
+    and "Directory Cache".
+
+  o Added CYCLE_KIND gadget for file system block size.
+
+  o Recognizes the "Help" key now.
+
+HDSetup/HDSetup
+
+  o Localized the name of the "Work" partition following request from Germany.
+
+Install/Install
+
+  o No longer copies the A2232 port-handler from the install disk when an
+    A2232 card is detected.  The 39.1 port-handler  handles the A2232
+    automatically
+
+
+
+
+Appendix C:  V39 ROM Changes
+
+
+Following is a description of most of the important changes made to the
+ROM-based system software between V37 and the initial release of V39.  This
+doesn't cover changes made to modules discussed in other talks, such as
+graphics and Intuition.
+
+
+BootMenu
+
+  o Brand new interface featuring 4 different displays:
+
+       Main Page: Lets you select between "Boot Options...",
+                  "Display Options..." and "Expansion Board Diagnostic...".
+                  Clicking any one of these brings up the corresponding page.
+                  The "Boot" gadget resumes the boot operation using the
+                  options selected in the other pages, and the "Boot With
+                  No Startup-Sequence" gadget does the same, except it doesn't
+                  execute the startup-sequence.
+
+       Boot Page: Lets you control boot-related options.  The listview on the
+                  left lets you pick which device to boot from.  The one on
+                  the right lets you enable/disable devices in the system.
+                  There is also a "Disable CPU Caches" gadget.  It turns
+                  off the CPU caches for the current boot, which saves a lot
+                  of games that break on 68040 processors because of the big
+                  caches.  Use or Cancel bring you back to the main page.
+
+       Gfx Page: Lets you pick what mode to boot in, and what chip set to
+                 emulate.  Use or Cancel bring you back to the main page.
+
+       Diag Page: Lists all the boards in the system and shows their state
+                  (Working or Defective).  This page is automatically brought
+                  up during system bootup if a board is defective.
+
+  o Hitting any key toggles the display between NTSC and PAL.  A message on the
+    main page indicates this fact.
+
+cia.resource
+
+  o Changed the priority of the interrupt servers to +120 such that
+    they don't miss interrupts.
+
+con-handler
+
+  o Fixed a low-memory trashing problem were CON: would signal a NULL task.
+
+  o It no longer will use proportional fonts (or rather fail at trying to use
+    them) when opened on a public screen.
+
+  o It is no longer possible to size the window such that the entire
+    interior goes away.
+
+  o Fixes the title bars (the parsing routine wasn't skipping over delimiters).
+    This also fixes the "funny" results you would get with malformed CON:
+    lines (like con:0a/0/640/200/title having a title of "200").
+
+  o Fixes negative sizes in the window spec.  Height < 0 gives you max
+    displayable height.
+
+  o Always opens window big enough for one line of text.
+
+console.device
+
+  o CMD_CLEAR fixed, was broken in V37.
+
+  o Uses screen dimensions (rounded off to nearest byte width) to calculate
+    maximum character map width instead of using bm_BytesPerRow.  Likewise
+    uses screen height instead of bm_Rows.
+
+  o First pass at the scrolling optimizations.  Recalcs scroll mask
+    at reset time (set to defaults), at full clear screen time (FF, or
+    HOME/CLS), and whenever you set new pen/cell/background colors
+    via the standard SGR sequences.
+
+  o Rework how conceal mode works - no longer sets rp_Mask to 0 which also
+    disabled ALL output, including scrolling, clearing, etc...  not good for
+    character mapped consoles in particular since it causes the display & map
+    to lose sync.
+
+  o Scroll DOWN no longer tries to fill in vacated portions of the
+    window with text in the off-screen buffer (if any).  This was
+    useless as a scrollback feature, could crash if you scrolled down more
+    than one window's worth of text (ouch), didn't perform a window
+    refresh (thereby leaving hidden characters in the visible map until
+    you resized, or revealed), and was inconsistent with SMART REFRESH
+    consoles - the application using scroll down would reasonably expect
+    that the vacated portion is entirely empty.
+
+  o First pass at breaking up large CMD_WRITEs.  Now unlocks layers
+    approx every 256 characters (this is simple, low-overhead code which
+    does not try to be exact).  Recalcs everything when layers are relocked.
+
+    Helps quite a bit.  No more locks for the entire file when doing
+    COPY foo *.  Makes console much more friendly; you can now resize
+    windows (only minor delay) during long writes, click in other windows,
+    etc.
+
+    Note this simple code won't work for a long stream of text with
+    no control characters; this however is extremely rare.  Even text
+    files have LF's, however in any case the problem is no worse than it
+    was before.
+
+  o The above feature makes it possible to cheaply break a CMD_WRITE,
+    hence making it possible to easily fix the DisplayBeep() deadlock
+    bug.  DisplayBeep() is now postponed a few CPU instructions
+    until after layers are unlocked.
+
+  o First pass at modifying mouse tracking code (drag selection)
+    to use input events instead of PeekQualifier().
+
+    This code change was added so tablet drivers, and commodities
+    can be used in character mapped consoles with selection capability.
+    PeekQualifier() returns only what input.device thinks the qualifiers
+    are; not what's seen by applications which watch/use the input stream.
+
+  o Now supports a new private sequence ("ESC[ s") which sets the
+    current SGR settings as your defaults.  This affects ESC[0m
+    (reset all SGR settings), ESC[39m (reset default primary pen),
+    and ESC[49m (reset default secondary pen [cell color]).
+
+    Text style info, and reverse mode (on/off) are also saved,
+    and hence restored when ESC[0m is sent.
+
+    This is intended as a user sequence for use in your shell-startup;
+    it allows you to use other colors/settings, and not have these constantly
+    reset by programs like MORE, LS, etc.  I'm recommending it not be used by
+    applications; only users for their shells.  An application which can
+    deal with this problem of SGR settings should continue to do whatever it is
+    doing now.  ESCc (reset console) does however reset the default
+    SGR settings to their true defaults.
+
+  o Downcoded pack.c.  Is many times faster (if the maps
+    are not disorganized; the maps become disorganized as text is
+    scrolled off screen, so in these cases an initial resize can
+    still take a moment - didn't want to touch that code though).
+    For an organized map, resizing even very large windows (e.g.,
+    Moniterm size) with 8x8 or smaller fonts (so we have a really
+    large map) is virtually instanteous on a 3000, and nearly so
+    even on 68000 machines.  It still takes time to redraw
+    the text (limited primarly by the Text() function), but the
+    time needed to pack, and unpack the map is a fraction of
+    what it was.
+
+  o Borderfill code added so ESC[>#m fills to borders if an explicit
+    line length and/or page length have not been set.  No change to
+    cu_XRExtant or cu_YRExtant in public portion of console unit structure.
+
+    Border refers to the area outside of the normal console rendering area
+    up to the window right/bottom borders.  The size of this area is 0-N
+    pixels where N is a maximum of the font width-1 or height-1.
+
+  o OpenDevice() now fails if trying to open a character mapped console, but
+    memory can not be allocated for the map.  In V37, OpenDevice() returned
+    success for this case which left you with a half functioning console
+    window - clearly confusing for the user, and virtually worthless because
+    of the lack of refresh info needed to fix up damage.
+
+    OpenDevice() still works the same if you have a SIMPLE_REFRESH window,
+    but did not ask for a character map (uncommon, but doable).
+
+  o Also fixed a bug which you may never see now that the above code was added;
+    clearing a simple refresh window which lacked a character map cleared
+    a garbage rectangle; layers prevents this from being a crash, and code
+    elsewhere inhibited negative rectangles.  The bug exists in 1.3 also, and
+    was partially fixed for 2.0; the bug use to be apparent in SUPER_BITMAP
+    windows, and because the case of SIMPLE_REFRESH without a map is rare
+    for console.device, the bug has probably never been noticed (found during
+    memoration testing).
+
+  o Removed code which checks to see if the application had drawn over the
+    cursor in a console.device opened by the application.  The kludge did a
+    ReadPixel() of every pixel where the cursor was drawn, and if any bits did
+    not match the expected color (also modified by pattern), cursor drawing was
+    turned off for that console for as long as that console window was opened.
+
+    Applications (few) which draw over the console cursor, but do not
+    explicitly turn it off will now have a patterned rectfill the size
+    of the cursor (generally 8x8) in the upper left hand corner of the
+    window if the window is deactivated.  This is a minor visual problem,
+    though not one which should cause anyone to crash, or not run.  The
+    problem will also never be noticed if the console window is not
+    deactivated.
+
+dos.library
+
+  o Fixes a bug in Open() where if the path was more than 127 characters long,
+    a random byte of memory would be trashed.
+
+  o Has support for fib_OwnerXXX for the networking people.  ExAll() supports
+    ED_OWNER.
+
+  o Added ExAllEnd().
+
+  o Added SetOwner().
+
+  o Fixed overrun error in FGets() (if no newline or EOF, it reads one
+    byte too many into your buffer - workaround for V36/37 - allocate buffer
+    1 byte larger than passed in.
+
+  o HUNK_RELOC32SHORT now works at the right value (1020).  Also added a 32-bit
+    PC-relative reference mode, mainly for >= '020-only executables.
+
+  o Added GVF_SAVE_VAR.  For SaveVar(), it will now do the same actions
+    for ENVARC:whatever, as well as ENV:.
+
+  o Fixed character classes in ParsePatternNoCase().  The classes weren't being
+    promoted to upper case (i.e.  [a-z] should have become [A-Z]).  Note that
+    only ParsePatternNoCase() was affected by this bug, not
+    MatchFirst()/MatchNext()
+
+  o Fixed FreeDosObject(xxx,DOS_CLI).  It wasn't freeing the strings
+    associated with the CLI.
+
+  o FindCliProc(0) now returns NULL, even though it's an invalid
+    CLI number.
+
+  o For people passing in an RDArgs structure but no RDA_Buffer to ReadArgs(),
+    it now properly clears out RDA_Buffer on FreeArgs(), so you can reuse it
+    safely (without having to clear it out yourself).
+
+  o StrToLong() was returning the number of white-space characters if no
+    digits were found.  It now properly returns -1.
+
+  o Fixed GVF_DONT_NULL_TERM for global variables.
+
+  o The initial console window on bootup now opens the size of the Workbench
+    DClip.
+
+  o Fixes the CliInitNewCLI() open of S:Shell-Startup when no FROM file is
+    specified.
+
+  o Fixed "Copy CONSOLE: foo" by making GetDeviceProc() know about CONSOLE:.
+
+  o Localized "Software Failure".
+
+filesystem
+
+  o Added support for DOS\4 and DOS\5 file systems which offer directory
+    caching.  DOS\4 and DOS\5 are orders of magnitude faster at directories
+    than other file systems, since they keep a cached copy of all the
+    ExNext()/ExAll() data appended to the directory.  This does require a few
+    extra block accesses on create and delete, and also after modifying the
+    file (in Close()).  Create speed dropped about 30%.  However, directory     speed is 7-20 times faster.
+
+    For floppies, this usually means that dir or list take about 3/4-1
+    second to start, and then you get most or all of the directory instantly,
+    or within 1/2 second or so (it may take 1 or 2 seconds for really big
+    directories).
+
+  o Fixed a bug with delete for non-DOS\5 partitions.
+
+  o Fixed a random memory trash in the filesystem in a race condition.
+    When two renames hit just the right timing, one has to wait on the
+    other, and the wait routine used the wrong (garbage) register to get
+    the head of the list.  This trashed 1 longword of semi-random memory,
+    and then hung the rename forever.
+
+gadtools.library
+
+  o LayoutMenus() and LayoutMenuItems() recognize some new tags to support
+    NewLook menus:
+
+	GTMN_NewLookMenus (BOOL): requests NewLook menu treatment.
+	GTMN_Checkmark (struct Image *): checkmark you'll use in menus
+	GTMN_AmigaKey (struct Image *): Amiga-key image you'll use in menus
+
+    Basically, if you open your window with WA_NewLookMenus, also lay out your
+    menus with GTMN_NewLookMenus.  If the menu-item font will be the screen's
+    font, that's all you need to do.  If the menu-item font is something else,
+    you must create a checkmark and an Amiga-key image, and pass each one to
+    both Intuition (WA_Checkmark and WA_AmigaKey) and to GadTools
+    (GTMN_Checkmark and GTMN_AmigaKey).
+
+    GTMN_FrontPen is now recognized.  If GTMN_NewLookMenus is specified, this
+    attribute defaults to the screen's BARDETAILPEN, else it defaults to
+    "do nothing", which allows the GTMN_FrontPen tag that may have been passed
+    to CreateMenus() to still hold.
+
+  o STRING_KIND, INTEGER_KIND, and BUTTON_KIND gadgets now support the
+    GA_Immediate tag.
+  o You can now put an arbitrary command string in the right-hand side
+    of a menu, where the Amiga-key equivalent goes.  To do this, point
+    the NewMenu nm_CommKey field at the string (eg.  "Shift-Alt-F1), and
+    set the new NM_COMMANDSTRING flag in nm_Flags.
+
+  o If a window has multiple checkboxes or radio buttons, a separate
+    image is no longer allocated for each one.
+
+  o The bevel box of the slider and listview now refresh with the gadget,
+    instead of with GT_RefreshWindow().
+
+  o Scrollers with GA_RelVerify set weren't sending IDCMP_GADGETUP messages
+    when the arrow buttons were released.
+
+  o GadTools now uses SetABPenDrMd() when advantageous.
+
+  o New GTMX_Scaled and GTCB_Scaled tags instruct GadTools to scale the mx
+    button and checkmark respectively to the dimensions supplied in the
+    NewGadget ng_Width and ng_Height fields.  Under V37, or in the absence of     these tags, the dimensions are fixed.  Added #defines for those dimensions.
+
+  o GadTools now has a GT_GetGadgetAttrsA() function (and a
+    GT_GetGadgetAttrs() varargs version).  This function retrieves
+    attributes of the specified gadget, according to the attributes chosen
+    in the tag list.  For each entry in the tag list, ti_Tag identifies
+    the attribute, and ti_Data is a pointer to the long variable where you
+    wish the result to be stored.
+
+  o Checkboxes now return their "selected" state in the IntuiMessage->Code
+    field.
+
+  o Many new tags for CreateGadgetA() were added:
+
+        GTTX_FrontPen and GTTX_BackPen to let the color of TEXT_KIND
+        gadgets be controlled.
+
+        GTNM_FrontPen and GTNM_BackPen to let the color of NUMBER_KIND
+        gadgets be controlled.
+
+        GTNM_Format to specify the formatting string to use with
+        NUMBER_KIND gadgets.  This is so a localized number format using
+        "%lD" instead of "%ld" can be used.
+
+        GTNM_MaxFormatLen to specify the maximum length of the string that
+        can be generated by GTNM_Format.
+
+        GTTX_Justification and GTNM_Justification to allow for right
+        and center justification on TEXT_KIND and NUMBER_KIND gadgets.
+
+        GTSL_MaxPixelLen lets you specify the maximum pixel length the level
+        display of a SLIDER_KIND gadget will occupy.  This allows proportional
+        fonts to be used with sliders.
+
+        GTSL_Justification specifies how the level display of a SLIDER_KIND
+        gadget is to be justified within the width allocated by
+        GTSL_MaxPixelLen.
+
+        GTLV_MakeVisible for listviews.  You pass it an item number and it
+        makes sure it is visible within the listview display.
+
+  o Many new tags for GT_SetGadgetAttrsA():
+
+        GTTX_FrontPen, GTTX_BackPen, GTNM_FrontPen, GTNM_BackPen, GTNM_Format
+        GTTX_Justification, GTNM_Justification, GTSL_Justification, and
+        GTLV_MakeVisible all have the same purpose as described for
+        CreateGadgetA() above.
+
+        MX_KIND gadgets now support GA_Disabled.
+
+        GTSL_DispFunc and GTSL_LevelFormat are now changeable via
+        GT_SetGadgetAttrs() instead of being create-time only attributes.
+
+  o Added the GTBB_FrameType tag which gives access to the new frame types
+    available in Intuition.  You pass the tag to DrawBevelBox() and can specify
+    BBFT_BUTTON, BBFT_RIDGE or BBFT_ICONDROPBOX.
+
+  o GT_SetGadgetAttrs() can now safely be called when the gadget being affected
+    is not attached to a window, by passing a NULL window parameter
+
+  o Specifying GTTX_CopyText and not GTTX_Text now works for TEXT_KIND gadgets.
+
+  o TEXT_KIND or NUMBER_KIND gadgets that have the GTTX_BackPen or GTNM_BackPen
+    tags specified look visually cleaner when changing the gadget text
+    using GTTX_Text or GTNM_Number than those without.  Listviews take
+    advantage of this when applicable.
+
+  o The value of GTSL_Level is now bounds checked at CreateGadget() time in
+    addition of at GT_SetGadgetAttrs() time.
+
+  o Fixed bug where doing GT_SetGadgetAttrs() on a MX_KIND gadget and not
+    passing the GTMX_Active tag would reset the active selection to #0 instead
+    of leaving it alone.
+
+  o The NewGadget.ng_TextAttr field can now be NULL whenever a gadget is
+    created.  In such a case, the screen's TextAttr is used (screen's TextAttr
+    is determined from the VisualInfo in the NewGadget structure).
+
+  o The level display of SLIDER_KIND gadgets is now rendered with background
+    set to BACKGROUNDPEN instead of 0, which is more "correct".
+
+  o Now uses SetWriteMask() instead of SetWrMsk().
+
+  o Added support for gadget help in all gadget types.
+
+  o GadTools now handles the new ExtIntuiMessage generated by Intuition.
+
+  o Many enhancements to PALETTE_KIND gadgets:
+
+        Palette gadgets no longer display a box filled with the selected color.
+        The selected color is instead denoted by a box drawn around the color
+        square in the main palette area.
+
+        Palette gadgets now allow strumming, and right mouse button
+        cancellation.
+
+        GTPA_ColorTable is a new tag to support sparce color tables in
+        gadtools.  Ths tag can be passed at create/set/get time.
+
+        GTPA_NumColors is a new tag to specify the total number of colors to
+        display.  This allows amounts of colors that are not powers of 2.  This
+        tag is also good at create/get time.
+
+        GTPA_ColorOffset is now supported at get/set time.
+
+        Renders itself much faster, this makes a big difference on 256 color
+        screens.
+
+        Now does quite smart layout of the color squares.  An attempt
+        is made to keep them as square as possible, based on the aspect ratio
+        information obtained from the gfx database.  As many colors as possible
+        are put on the screen, until things get too small in which case the
+        upper colors are thrown away.
+
+  o MX_KIND gadgets now support ng_GadgetText and will display the label
+    in relation to the group of mx gadgets.
+
+  o Added GTMX_TitlePlace tag.  This determines where the title of a MX_KIND
+    gadget is displayed.  If this tag is not provided, the title is not
+    displayed.  This is required for compatibility.
+
+  o Fixed size calculation errors in listview present since V37.  This
+    may cause certain listviews to change in size from their V37 size.
+
+  o Revamp of listviews:
+
+        ListView lines can no longer end up complemented in certain tricky
+        situations involving detaching lists.
+
+        ListViews correctly track the selected line when you click in them.
+
+        ListViews were clipping the text four pixels early on the right.
+
+        Added GTLV_CallBack.  This tag allows a callback hook to be provided
+        to gadtools for listview handling.  Currently, the hook will only
+        be called to render an individual item.  This adds the very useful
+        ability to define a callback hook which is used to scroll complex
+        items such as graphics, etc.
+
+        Listviews now allow strumming.  That is, holding down the left mouse
+        button and moving the mouse up or down causes the active selection
+        to track the mouse.  Moving the mouse off the top or bottom of the
+        listview causes the list to scroll.
+
+        Listviews that used to have a display or string gadget underneath
+        them now have a highlight bar to indicate the selected item.  This is
+        in anticipation of listview multi-selection.  If the listview had a
+        display gadget, it no longer does as the highlight bar is used.  If
+        a listview had a string gadget, it retains it.
+
+        Listviews highlighting is done using the pen-spec method instead of
+        the 1.3 complementing method.
+
+        Listviews are much faster at rendering and scrolling, which makes a
+        noticeable difference in 8 bit planes
+
+        Added GTLV_MaxPen tag to specify the maximum pen number used by
+        a custom rendering callback hook.  This enables more optimal scrolling
+        and screen updates.
+
+        {GTLV_Selected, ~0} is now supported at both create and set times.
+
+        {GTLV_Labels, ~0} is now supported at create time.
+
+        Listviews now support GA_Disabled.  This causes the list area to be
+        ghosted, but the scroller and arrows remain unghosted.
+
+  o When cloning a rastport for internal use, no longer copies the TmpRas
+    field of the original rastport, which should eliminate some potential
+    bugs.
+
+  o Changed the definition of TEXTIDCMP and NUMBERIDCMP in gadtools.h to be
+    (0) instead of (NULL), to keep the Manx compiler happy.
+
+  o It is now safe to call GT_GetGadgetAttrs() and GT_SetGadgetAttrs() with
+    NULL gadget pointers.
+
+  o When GT_SetGadgetAttrs() is called on an active STRING_KIND or
+    NUMBER_KIND gadget, the gadget is automatically reactivated after
+    its string is changed.  Although this reactivation flickers,
+    the functionality is quite useful.
+
+  o Now copies a complete TTextAttr structure when needed to fix potential
+    problems with WeightTAMatch().  This is only done to create underlines
+    under gadget labels.
+
+  o Fixed example in CreateGadget() autodoc.  Only had a single argument in the
+    call to GT_RefreshWindow()
+
+  o BOOPSI images are now allowed in gadtools menus.
+
+  o Added the GTTX_Clipped tag for TEXT_KIND gadgets.
+
+
+ramdrive.device
+
+  o Uses AllocMem(xxxx,MEMF_REVERSE!MEMF_KICK!MEMF_NO_EXPUNGE) instead
+    of private AllocHigh() code.
+
+  o Uses CopyMem() instead of an unrolled loop.  CopyMem()'s MOVEM's are
+    faster than the unrolled loop used previously.
+
+  o Protects KickTag/KickMem list with FORBID/PERMIT inside of KillRad()
+    vector used by REMRAD.  Fixes possible crash if some other task
+    is fiddling with these lists at the same time.
+
+ram-handler
+
+  o Fixes the long standing bug where if the file you were examining with
+    ExNext() is deleted, RAM: goes off into never-never land (and your system
+    follows).  If the file is deleted, it will restart at the beginning of the
+    directory.
+
+  o Disabled softlinks in RAM: to save ROM space.
+
+shell
+
+  o NewShell/NewCLI now open full with (like Shell from WB).
+
+  o NewShell/NewCLI now handle FROM fields up to 255 long (up from 127) and
+    errors out if FROM or WINDOW are too long.
+
+  o Resident module handling now properly Forbid()s around seg_UC++/--.
+
+  o Prompt now handles %%.
+
+  o Removed two harmless enforcer hits at boottime.
+
+  o If a "command `command...` ..." fails, it no longer inserts the error
+    message and continues (FailAt is used to determine failure).
+
+  o Added evil kludge to solve the problem of 1.3 SetClock crashing on 68040s.
+
+  o Fixes the write to rom on <> redirection.
+
+  o NewShell/NewCLI no longer print error messages if no S:Shell-Startup is
+    present.
+
+timer.device
+
+  o Timer keys off new GfxBase flag for determining EClock frequency
+    since PAL/NTSC is now software selectable.
+
+trackdisk.device
+
+  o Post-write delay has been moved from 2ms (spec is 1.2ms) to 3ms,
+    and side settle delay from 1ms (spec is 0.1ms) to 1.5ms.  This should fix
+    most A1010's out there.  In addition, both of those values have been made
+    part of the public unit structure like settle delay and step delay, so
+    people with REALLY bad A1010's can back it off as far as they need to
+    (or setpatch can).
+
+  o Fixes a nasty oversight in the HD floppy handling.  After switching
+    from a HD floppy to LD floppy and back to HD floppy, you could never
+    safely write to an HD floppy unless you formatted an HD floppy first.
+
+    What happened was that the extra slop area at the front of the write
+    wasn't getting set to $aaaaaaaa, it was being left with garbage from the
+    last LD read (since LD uses less slop, it's start-read spot is earlier).
+    Format re-inits the entire buffer, as does the first switch to an HD
+    floppy (only the first, since it switches to a larger buffer then).
+
+  o Fixed a bug where if a track was totally unreadable it returned the number
+    of retries as the IO_ERROR instead of TDERR_NoSecHdr (this was causing the
+    "Error 11" stuff when you popped a disk while copying from it).
+utility.library
+
+  o Downcoded all tag calls from C to assembly which yields substantially
+    faster performance.
+
+  o Removed 68020-specific versions of the date conversion routines.
+
+  o Fixed bug in MapTags() where the "includeMiss" parameter didn't work.
+
+  o Cleaned up and expanded autodocs.
+
+  o Cleaned up public include files.
+
+  o Added comments in the autodoc entries for the 4 32-bit math routines,
+    to the effect that they preserve address registers, and that A6
+    does NOT have to be loaded in order to call the routines.  This is an
+    exception to the standard rule, but can avoid register shuffling which
+    is important in low-level math routines.
+
+  o Made the math routines several cycles faster on 68000 machines.
+
+  o Added SMult64() and UMult64() which do 32x32=64 bit integer math.
+
+  o Added ApplyTagChanges().
+
+  o Added two new library calls that are mainly here to help intuition get
+    smaller.  These are PackStructureTags() and UnpackStructureTags().
+
+  o Added the NameSpace code.
+
+  o Added GetUniqueID().
+
+
+
+
+
+Appendix D:  Release 3.1 ROM Changes
+
+
+Following is a description of most of the important changes made to the
+ROM-based system software between Release 3 and Release 3.1.  This doesn't
+cover changes made to modules not discussed in this talk.  It also doesn't cover
+any changes after December 1992.  Since 3.1 is still under development as of
+this writing, more changes are likely to be made to the software prior to
+release.
+
+
+BootMenu
+
+  o Fixed bug where the chip type mutual exclude gadget was being displayed
+    even on pre-ECS machines.
+
+exec.library
+
+  o Added the full support for the Zorro-III quick interrupts.
+    The new LVO (in an old slot) ObtainQuickVector() is used to allocate
+    the vector.  There is no deallocation since this is basically
+    a configuration issue and not a dynamic thing.
+
+  o On machines with PCMCIA cards, EXEC now makes sure the interface
+    is turned on at boot time and then will turn it off before configuration.
+    This should let a full 8-meg of RAM be added in the Zorro-II space.
+    This change requires an update to the credit card resource/device
+    such that it will correctly turn on the interface if needed.
+
+  o The Quick Interrupt vectors that have not yet been added used to
+    be -1.  Now they point at an Alert that is the new Unexpected
+    Quick Interrupt.
+
+gadtools.library
+
+  o Fixed bugs in clipping code in TEXT_KIND and NUMBER_KIND gadgets.  The
+    clipping didn't work correctly on right and center justified text, and
+    was under-evaluating the number of pixels available for the text in a
+    gadget that didn't have borders.
+
+  o Fixed bug in the calculation of the default value for the GTSL_MaxPixelLen
+    tag.  This caused odd clipping of the number display for sliders whenever
+    the title of the gadget wasn't on the same side of the slider as the
+    display of its current value.
+
+  o Fixed GTJ_CENTER option for the various GTXX_Justification tags.  The way
+    centering was done could cause certain characters to get lost.
+
+carddisk.device
+
+  o Now flushes cache during data writes in anticipation of 040 copyback
+    cache on A1200 (no hardware support for PCMCIA memory space data
+    cache control provided, so the data cache is still potentially
+    a problem when programming flash rom; means turning off the
+    data cache globally for 030/040 A1200's to support 6-10us
+    write/verify timing).
+
+card.resource
+
+  o Now leaves PCMCIA slot disabled if any RAM is configured at $600000;
+    this allows use of >4Megs of 24bit RAM on the A1200 at the expense of
+    being unable to use the PCMCIA slot.
+
+  o Partial work around for a hardware bug in our PCMCIA implementation
+    which presents 2Meg+ addresses everytime we access ATTRIBUTE memory.
+    This causes a problem when a >2Meg card which ignores REG is used
+    (and a potential problem with any card which tries to decode the entire
+    address when REG is set).  The former problem is kludged around by trying
+    to sniff out mirroring of 4 bytes at $A00000 and $800000 but not mirrored
+    at $600000.
+  - Tested with:
+	Fujitsu 512K SRAM (ignores REG)
+	Fujitsu 128K SRAM (decodes entire address)
+	Panasonic 512K SRAM (returns $FF for attribute memory)
+	HP 128K SRAM (has 16 bytes of attribute memory)
+	NewMedia 2M PSRAM (ignores REG)
+	NewMedia 4M PSRAM (ignores REG - this is the card which demonstrates
+		the problem)
+
+  o Considerably faster memory sizing for SRAM/DRAM cards (does test of
+    every 256 words/long-words) - tested with:
+
+	Fujitsu 512K SRAM (ignores REG)
+	Fujitsu 128K SRAM (decodes entire address)
+	Panasonic 512K SRAM (returns $FF for attribute memory)
+	HP 128K SRAM (has 16 bytes of attribute memory)
+	NewMedia 2M PSRAM (ignores REG)
+	NewMedia 4M PSRAM (ignores REG - this is the card which demonstrates
+        	the problem)
+
+  o CardMemoryMap structure extended for V39 card.resource.  Now has
+    COMMON/ATTR/IO Memory Zone size for lookup via structure.  Will be used
+    to provide splitting of memory zones in the future if needed.  No change
+    for existing software.
+
+  o BVD1/SC, BVD2/DA, and BSY/IRQ status change interrupts can now be
+    individually enabled/disabled.  WR (Write-Protect) status change
+    interrupts are always enabled (rare), and there is no change in the
+    defaults.  This is intended for future use if needed (e.g., Flash-ROM
+    which expects software to poll SC during programming; better performance
+    can be obtained if interrupts are not generated).  If needed on the A600,
+    this can be implemented as documented work around, or SeFunction() of
+    CardMiscControl().  No expected change for existing software;
+    defaults are the same as they use to be in V37 card.resource.  Spurious
+    interrupts (change true, but interrupt disabled) are cleared by the
+    resource software, and hidden from the status change callback hook.
+
+  o Secondary callback option for status change interrupts; allows
+    high-performance hardware to be serviced via interrupts only (instead of
+    signalling a task).
+
+  o Flush Cache when ReleaseCard() is called.  A flush before full release
+    ensures that no more writes will occur once the caller returns from
+    ReleaseCard().  This is to support the 040 copyback cache when/if an 040
+    becomes available for the A1200.  Would prefer control over the data cache
+    for PCMCIA space independent of the first 4MEG of 24bit Fast RAM, but we
+    don't have this feature.  Lack of Data Cache control for PCMCIA space is
+    still potentially problematic for use of FlashROM programming which
+    requires disabling the DATA cache for 030/040 equipped A1200's so that fast
+    (6-10us) write/read operations can be performed during programming.
+    Disabling the DATA cache during FlashROM writes means disabling globally.
+
+dos.library
+
+  o Fixed bug in RemAssignList(): it wouldn't remove the first lock in the
+    assign.
+
+  o AttemptLockDosList() was returning NULL or 1 for failure instead of NULL.
+
+  o Made RunCommand() free any memory added to the tc_MemEntryList by
+    the command being run.  tc_MemEntry is now saved and emptied before calling
+    the command, and restored after any added memory is freed.
+
+  o Fixed ExAll() emulation to not lose 1 file each time the list is broken
+    up into multiple ExAll() calls.
+
+  o Removed broken attempted fix for rda_Buffer.  Autodocs now reflect that
+    you must restore rda_Buffer before each call to ReadArgs() if you pass
+    in an RDArgs structure.  Now always clears rda_Buffer in FreeArgs().
+
+  o SetVBuf() enabled.
+  o Changed some prototypes to avoid c++ reserved word "template".  Changed
+    VPrintf()/VFPrintf() prototypes to VOID * from LONG * to reduce useless
+    compiler warnings/casts.
+
+  o GetDeviceProc() now returns errors better (especially
+    ERROR_NO_MORE_ENTRIES).  It used to lose error codes by calling
+    UnLock().
+
+  o SetVBuf() now updates the filehandle so it won't overwrite the buffer
+    with a smaller one if SetVBuf() is called before doing buffered IO.
+    Also it doesn't allocate anything if the new size is the same as the
+    old.
+
+  o SetVar() now creates subdirectories as needed (including multiple ones)
+    if they do not exist already (in ENV: and in ENVARC: if GVF_SAVE_VAR
+    is set).  Also, it now preserves any IoErr() and won't try to save to
+    ENVARC if there is an error saving to ENV:.
+
+  o Modified to fix an edge condition which existed when making the mod to
+    SetVBuf().
+
+expansion.library
+
+  o New A1200-specific build that can detect CPU Slot RAM ($08000000)
+    if you have a 32-bit addressing CPU installed.  The CPU slot area
+    is 128meg in size (just like the A3000) but has the addition of
+    a wrap check at each 1meg of space in the CPU address space to make
+    low-cost RAM expansion possible without jumpers.  (It is now possible
+    to get 128Meg SIMMs so a single SIMM on a CPU card could make a
+    128Meg of FAST RAM system )
+
+    The reason that this has to be A1200 specific (at least for now)
+    is that the behavior of the existing A500/A2000 CPU cards with
+    respect to 32-bit addresses is very undefined.  They act very
+    strangely and differently making it very difficult to safely figure
+    out if these cards are operating correctly or not.
+
+filesystem
+
+  o Fixed deletion of the destination of a hardlink - this was badly
+    broken in all versions of the FS, DCFS just made it easier to hit.
+    This was causing spurious "Checksum Error on Block 0" errors (and
+    potentially others), especially when UUCP was using a DCFS partition.
+
+  o Fixed a return code which would make softlinks not work if a softlink
+    to a directory is in the middle of a path.
+
+  o Fixed the buffer overrun on ExAll() with ED_COMMENT if the first
+    character was >$80 (and lost the first character of comments).
+
+  o Fixes updating the date of a directory that changes in the parent
+    of that directory's dircache.
+
+  o There were old offsetting bugs in the ExAll() filename/comment copying
+    code.  When I fixed the code not to copy too many bytes, the clear was
+    being done to the wrong byte.
+
+filesysres.resource
+
+  o Now matches the FS version change.
+
+workbench.library
+
+  o Adjusted the sizes of the OK/CANCEL and SAVE/CANCEL gadgets in
+    the Workbench requesters to match the rest of the system.
+
+  o Fixed a long standing bug that was just found: The system would crash
+    (sometimes) or cause Enforcer hits if files were deleted within
+    a drawer that was also selected for deletion.  This one has
+    a fundamental flaw in Workbench which had to be patched with some
+    rather tricky organization of tests...

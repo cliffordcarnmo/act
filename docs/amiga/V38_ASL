@@ -1,0 +1,423 @@
+
+The ASL Library and 2.1
+=======================
+
+(c) Copyright 1992-93 Commodore-Amiga, Inc.  All Rights Reserved
+
+Among the many improvements to the 2.1 version of the operating system,
+the ASL library now has a new type of requester: the screen mode
+requester.  There are also many new tags and new header files.  The
+purpose of this article is to summarize the changes in the 2.1 version of
+the ASL library. 
+
+
+The Screen Mode Requester
+=========================
+
+The Screeen Mode requester provides application writers with a convenient
+way to ask the user for their screen display preferences.  You create an
+ASL screen mode requester the same way you create an ASL file requester or
+font requester; only the tags and structures used are different. 
+
+There are three main functions to call:
+
+· AllocAslRequest() 	Sets up the ScreenModeRequester structure you need. 
+
+· AslRequest()      	Displays the requester you have set up with
+			AllocAslRequest(). 
+
+· FreeAslRequest()  	Frees the ScreenModeRequester structure and
+			other resources.
+
+The first step is to set up a ScreenModeRequester structure with the
+AllocAslRequest() function.  The ScreenModeRequester structure is defined
+in <libraries/asl.h> as follows:
+
+ struct ScreenModeRequester {
+     ULONG sm_DisplayID;            /* Display mode ID                  */
+     ULONG sm_DisplayWidth;         /* Width of display in pixels       */
+     ULONG sm_DisplayHeight;        /* Height of display in pixels      */
+     UWORD sm_DisplayDepth;         /* Number of bit-planes of display  */
+     UWORD sm_OverscanType;         /* Type of overscan of display      */
+     BOOL  sm_AutoScroll;           /* Display should auto-scroll?      */
+     ULONG sm_BitMapWidth;          /* Used to create your own BitMap   */
+     ULONG sm_BitMapHeight;
+     WORD  sm_LeftEdge;             /* Coordinates of requester on exit */
+     WORD  sm_TopEdge;
+     WORD  sm_Width;
+     WORD  sm_Height;
+     BOOL  sm_InfoOpened;           /* Info window opened on exit?      */
+     WORD  sm_InfoLeftEdge;         /* Last coordinates of Info window  */
+     WORD  sm_InfoTopEdge;
+     WORD  sm_InfoWidth;
+     WORD  sm_InfoHeight;
+     APTR  sm_UserData;             /* You can store your own data here */
+ };
+
+The fields in this structure will be filled in with information obtained
+from the user.  This information can then be used in your application to
+create the type of screen that the user prefers. 
+
+
+Note that for most programs, the user's preferred screen mode can be
+determined from the Amiga's Preferences subsystem.  You do not have to use
+a screen mode requester.  Consider carefully whether it is more
+appropriate to use an ASL requester or to obtain the information directly
+from the settings in Overscan and ScreenMode Preferences. 
+ 
+Listed below is a simple program that displays the new ASL screen mode
+requester including depth, width and height gadgets.  (This program
+requires the 2.1 version of the Amiga OS.)
+ 
+;/*
+LC -b1 -cfistq -v -y -j73 aslsm.c
+Blink FROM LIB:c.o,aslsm.o TO aslsm library LIB:lc.lib,lib:amiga.lib
+quit
+*/
+
+
+#include <clib/all_protos.h>
+#include <exec/types.h>
+#include <libraries/asl.h>
+#include <utility/tagitem.h>
+
+#define SMRTITLE ("Simplest ScreenMode Requester")
+
+UBYTE *vers="\0$VER: ASL_ScreenMode_Requester 0.01 (8.7.92)";
+
+struct Library *AslBase;
+
+
+void
+main(int argc, char **argv)
+{
+
+struct ScreenModeRequester *smr;
+struct TagItem smrtags[5];
+
+if( AslBase=OpenLibrary("asl.library", 38L) )
+    {
+    smrtags[0].ti_Tag=ASLSM_TitleText;
+    smrtags[0].ti_Data=(ULONG)SMRTITLE;
+
+    smrtags[1].ti_Tag=ASLSM_DoWidth;
+    smrtags[1].ti_Data=TRUE;
+
+    smrtags[2].ti_Tag=ASLSM_DoHeight;
+    smrtags[2].ti_Data=TRUE;
+
+    smrtags[3].ti_Tag=ASLSM_DoDepth;
+    smrtags[3].ti_Data=TRUE;
+
+    smrtags[4].ti_Tag=TAG_DONE;
+
+    if( smr = (struct ScreenModeRequester *)
+          AllocAslRequest(ASL_ScreenModeRequest, smrtags) )
+        {
+        if( AslRequest(smr, 0L) )
+            {
+            printf("Display type: $%lx (see graphics/displayinfo.h)\n",
+                    smr->sm_DisplayID);
+            printf("Display width: %ld, height: %ld, depth: %d\n",
+                   smr->sm_DisplayWidth, smr->sm_DisplayHeight,
+                   smr->sm_DisplayDepth);
+            }              
+        else
+            printf("User cancelled or error...\n");  
+        
+        FreeAslRequest(smr);
+        }
+    CloseLibrary(AslBase);
+    }
+}
+
+
+As with other ASL requesters, the attributes of the screen mode requester
+are established using tag items when AllocAslRequest() is called.  These
+attributes can later be changed by using different tag items in the
+AslRequest() call. 
+
+For instance, in the example above, tag items are used to specify that the
+screen mode requester should include gadgets for setting the display
+height (ASLSM_DoHeight), width (ASLSM_DoWidth) and depth (ASLSM_DoDepth). 
+
+
+Screen Mode Requester Tags
+==========================
+
+Here's a brief summary of the tag items that apply only to the ASL screen
+mode requester.  For a complete listing of all ASL tag items, refer to the
+ASL include files and Autodocs.
+
+Screen Mode Tag Name			Used For
+--------------------			--------
+/* Window control */
+#define ASLSM_Window	      		Parent window
+#define ASLSM_Screen	      		Screen to open on if no window
+#define ASLSM_PubScreenName   		Name of public screen
+#define ASLSM_PrivateIDCMP    		Allocate private IDCMP?
+#define ASLSM_IntuiMsgFunc    		Function to handle IntuiMessages
+#define ASLSM_SleepWindow     		Block input in ASLSM_Window?
+#define ASLSM_UserData	   		What to put in sm_UserData
+
+/* Text display */
+#define ASLSM_TextAttr	      		Text font to use for gadget text
+#define ASLSM_Locale	        	Locale ASL should use for text
+#define ASLSM_TitleText       		Title of requester
+#define ASLSM_PositiveText    		Positive gadget text
+#define ASLSM_NegativeText      	Negative gadget text
+
+/* Initial settings */
+#define ASLSM_InitialLeftEdge 		Initial requester coordinates
+#define ASLSM_InitialTopEdge
+#define ASLSM_InitialWidth		Initial requester dimensions
+#define ASLSM_InitialHeight
+#define ASLSM_InitialDisplayID		Initial display mode id
+#define ASLSM_InitialDisplayWidth  	Initial display width
+#define ASLSM_InitialDisplayHeight 	Initial display height
+#define ASLSM_InitialDisplayDepth  	Initial display depth
+#define ASLSM_InitialOverscanType  	Initial type of overscan
+#define ASLSM_InitialAutoScroll    	Initial autoscroll setting
+#define ASLSM_InitialInfoOpened    	Info window initially opened?
+#define ASLSM_InitialInfoLeftEdge 	Initial Info window coords.
+#define ASLSM_InitialInfoTopEdge
+
+/* Options */
+#define ASLSM_DoWidth         		Display Width gadget?
+#define ASLSM_DoHeight        		Display Height gadget?
+#define ASLSM_DoDepth         		Display Depth gadget?
+#define ASLSM_DoOverscanType  		Display Overscan Type gadget?
+#define ASLSM_DoAutoScroll    		Display AutoScroll gadget?
+
+/* Filtering */
+#define ASLSM_PropertyFlags   		Must have these Property flags
+#define ASLSM_PropertyMask    		Only these should be looked at
+#define ASLSM_MinWidth	      		Minimum display width to allow
+#define ASLSM_MaxWidth	      		Maximum display width to allow
+#define ASLSM_MinHeight       		Minimum display height to allow
+#define ASLSM_MaxHeight       		Maximum display height to allow
+#define ASLSM_MinDepth	      		Minimum display depth
+#define ASLSM_MaxDepth	      		Maximum display depth
+#define ASLSM_FilterFunc      		Function to filter mode id's
+
+#define ASLSM_CustomSMList    		Exec list of struct DisplayMode
+
+
+
+Other New ASL Tags in 2.1
+=========================
+
+The tag items used to control the behavior of ASL requesters have been
+overhauled for the 2.1 release of the Amiga OS.  This section summarizes
+the new 2.1 tags. 
+
+
+New ASL Tags Used by All Requester Types
+========================================
+
+These tags apply to all three types of ASL requesters: the file requester,
+the font requester and the new screen mode requester.  Each tag in the
+list below is prepended with ASLxx_.  The actual tag names used by ASL
+will be prepended with ASLFR_, ASLFO_ or ASLSM_ depending on what type of
+requester is being used. 
+
+New 2.1 Tag Name    	Used For
+----------------	--------
+ASLxx_PubScreenName 	Name of a public screen on which to open the
+			requester. 
+ASLxx_Screen        	Pointer to a screen on which to open the requester. 
+ASLxx_PrivateIDCMP  	Specifies separate IDCMP for the requester
+			window (this replaces
+			the FILF_NEWIDCMP and FONF_NEWIDCMP flags in the
+ 			ASL_FuncFlags tag used in V37).  
+ASLxx_IntuiMsgFunc  	Function to call when an unknown message arrives
+			at a shared IDCMP used by the requester window
+			(this replaces the ASL_HookFunc tag and the
+			FILF_DOMSGFUNC and FONF_DOMSGFUNC flags in the
+			ASL_FuncFlags used in V37). 
+ASLxx_SleepWindow   	Modal requester.  Specifies that input should be
+			blocked in the parent window.
+ASLxx_UserData      	A 32-bit value copied into the user data field of
+			the requester structure. 
+ASLxx_TextAttr      	Font to use for requester window gadgets and menus.
+ASLxx_Locale        	Locale (and language) to use for the requester
+			window. 
+ASLxx_FilterFunc    	Function to call for each item (file, font or
+			mode) encountered.  If the function returns TRUE,
+			the item is displayed in the list view gadget,
+			otherwise it is rejected and not displayed.
+			(This replaces the ASL_HookFunc tag and the
+			FILF_DOWILDFUNC and FONF_DOWILDFUNC flags in
+			ASL_FuncFLags used in V37.)
+
+
+
+New ASL Tags Used by the File Requester
+=======================================
+
+These new 2.1 tag items apply only to file requesters:
+        
+New 2.1 Tag Name    	Used For
+----------------	--------
+ASLFR_DoSaveMode    	Specifies that this file requester is a save
+			requester (this replaces the FILF_SAVE flag in
+			the ASL_FuncFlags tag used in V37).
+ASLFR_DoMultiSelect 	Enables multiple selection of files
+			(this replaces the FILF_MULTISELECT flag in
+			ASL_FuncFlags used in V37).
+ASLFR_DoPatterns    	Causes a pattern gadget to be included in the
+			requester (this replaces the FILF_PATGAD flag
+			in ASL_FuncFlags used in V37). 
+ASLFR_DrawersOnly   	Causes the requester to only display drawers
+			(this replaces the FIL1F_NOFILES flag in
+			ASL_ExtFlags1 used in V37).
+ASLFR_RejectIcons   	Causes the requester not to display Workbench icons. 
+ASLFR_RejectPattern 	Specifies an AmigaDOS pattern used to reject files. 
+ASLFR_AcceptPattern 	Specifies an AmigaDOS pattern used to accept files. 
+ASLFR_FilterDrawers 	Makes ASLFR_RejectPattern and ASLFR_AcceptPattern
+ 			apply to drawer names.
+
+
+
+New ASL Tags Used by the Font Requester
+=======================================
+
+These new 2.1 tags apply only to font requesters.  The ASL Autodocs list
+most of these as new tag items for V38.  However there are no new features
+with most of these tags, just new, more consistent names. 
+
+New 2.1 Tag Name      	Used For
+----------------	--------
+ASLFO_DoFrontPen 	Causes the requester to display the Front Color
+			selection gadget
+			(this replaces the FONF_FRONTCOLOR flag in
+			ASL_FuncFlags used in V37). 
+ASLFO_DoBackPen		Causes the requester to display the Back Color
+			selection gadget (this replaces the FONF_BACKCOLOR
+			flag in ASL_FuncFlags used in V37). 
+ASLFO_DoStyle 		Causes the requester to display Style checkbox
+			gadgets (this replaces the FONF_STYLES flag in
+			ASL_FuncFlags used in V37).
+ASLFO_DoDrawMode	Causes the requester to display the Mode cycle
+			gadget.(this replaces the FONF_DRAWMODE flag in
+			ASL_FuncFlags used in V37).
+ASLFO_FixedWidthOnly	Causes the requester to list only fixed-width
+			fonts (this replaces the FONF_FIXEDWIDTH flag
+			in ASL_FuncFlags  used in V37).
+ASLFO_InitialDrawMode 	Initial setting of the font Mode gadget.
+
+
+
+
+New Tag Names for Old Features
+==============================
+Many of the new tag items in the asl.h header file do not provide any new
+2.1 features.  They just make the naming conventions used by ASL more
+consistent.  This section lists the new tag names along with the
+corresponding tag name used previously in V37 and earlier versions of the
+OS. 
+
+In this first list each tag is prepended with ASLxx_.  The actual tag
+names used by ASL will be prepended with ASLFR_, ASLFO_ or ASLSM_
+depending on what type of requester is being used. 
+
+New 2.1 Tag Name      	Old Tag Name	Used For
+----------------	------------	--------
+ASLxx_Window          	ASL_Window	Specifies the parent window of
+					the requester.
+ASLxx_TitleText       	ASL_Hail       	String to use for the requester
+					title.
+ASLxx_PositiveText    	ASL_OKText 	String to use for the OK button.
+ASLxx_NegativeText    	ASL_CancelText	String to use for the  Cancel
+					button.
+
+ASLxx_InitialLeftEdge 	ASL_LeftEdge	These specify the size and
+ASLxx_InitialTopEdge 	ASL_TopeEdge	position of the requester.
+ASLxx_InitialWidth    	ASL_Width
+ASLxx_InitialHeight   	ASL_Height
+
+
+
+
+
+This set of ASL tags apply only to file requesters:
+
+New 2.1 Tag Name      	Old Tag Name    Used For
+----------------	------------	--------
+ASLFR_InitialFile	ASL_File	Initial file name selection.
+ASLFR_InitialDrawer	ASL_Dir		Initial directory name selection.
+ASLFR_InitialPattern	ASL_Pattern	Initial pattern-matching string.
+ASLFR_Flags1		ASL_Flags	Various file requester options.
+ASLFR_Flags2		ASL_ExtFlags1	Various file requester options.
+ASLFR_HookFunc		ASL_HookFunc	User function for inspecting list
+					view gadget entries or handling
+					shared IDCMP messages.
+
+
+
+This set of ASL tags applies only to font requesters:
+
+New 2.1 Tag Name      	Old Tag Name    Used For
+----------------	------------	--------
+ASLFO_InitialName	ASL_FontName    Initial font name selection.
+ASLFO_InitialSize     	ASL_FontHeight  Initial font size.
+ASLFO_InitialFrontPen 	ASL_FrontPen    Initial setting of Front Color
+					gadget. 
+ASLFO_InitialBackPen  	ASL_BackPen     Initial setting of Back Color
+					gadget.
+ASLFO_InitialStyle    	ASL_FontStyles  Initial setting of font Style
+					gadget.
+ASLFO_ModeList        	ASL_ModeList    Alternate strings for Mode
+					cycle gadget.
+ASLFO_MaxHeight       	ASL_MaxHeight   Specifies the maximum height of
+					fonts to be listed.
+ASLFO_MinHeight       	ASL_MinHeight   Specifies the minimum height of
+					fonts to be listed.
+ASLFO_HookFunc        	ASL_HookFunc    User function for inspecting
+					list view gadget entries or
+					handling shared IDCMP messages.
+ASLFO_Flags           	ASL_Flags       Various font requester options.
+
+
+
+
+
+The ASL Library and Amiga OS 2.1
+================================
+
+Developer Release NotesThe ASL Library and 2.1Amiga OS 2.1
+
+Release Notes
+
+This is the initial setting of the display Mode list view gadget.
+(Display mode IDs are defined in <graphics/displayinfo.h>.)
+    
+
+These tags specify whether the screen mode requester should include a
+width numeric slider gadget and what values to use for its initial,
+maximum and minimum setting. 
+
+These tags specify whether the screen mode requester should include a
+height numeric gadget and what values to use for its initial, maximum and
+minimum setting. 
+
+
+These tags specify whether the screen mode requester should include a
+depth numeric gadget and what values to use for its initial, maximum and
+minimum setting. 
+
+These tags specify whether the screen mode requester should include an
+Overscan Type cycle gadget and what its initial setting should be. 
+
+These tags specify whether the screen mode requester should include an
+Autoscroll checkbox gadget and its initial state. 
+
+These tags specify whether the screen mode requester should appear with
+the Property window open and the values to use for its initial position.
+Note that this window is always accesible from the screen mode requester's
+menu. 
+
+These two tags together provide a way to filter the display mode
+properties that will appear in the Property window. 
+
+A custom Exec list of modes to let the user choose from.

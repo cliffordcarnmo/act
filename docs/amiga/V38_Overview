@@ -1,0 +1,1510 @@
+Release 2.1: Overview
+
+(c) Copyright 1992-93 Commodore-Amiga, Inc.  All Rights Reserved
+
+NOTE: In general, all 2.1 Workbench changes also apply to 3.x Workbench.
+
+
+The 2.1 version of the Amiga operating system is a disk-based revision.
+This release is compatible with the 2.04 ROM set and contains enhancements
+in four main categories:
+
+1. Locale.library.
+
+This is a new run-time function library that provides an easy way for
+applications to support various languages in the international markets
+that Commodore serves.  With locale.library you can create a single
+application that runs in English, German, French or other languages
+according to the user's preference. 
+
+2. Bullet.library.
+
+This is a new run-time function library that provides enhanced
+handling and control of the outline fonts introduced in Release 2.0.
+The bullet.library is the Amiga implementation of the Agfa Intellifont
+engine.  With bullet.library, you can size, shear, rotate and perform
+other font manipulations not previously available. 
+
+3. CrossDOS.
+
+This is a new system handler that provides for the reading and writing
+of MS-DOS style disks with the Amiga's standard disk drives (no
+Bridgeboard or other extra hardware is required). 
+
+4. General Improvements to Workbench and System Programs.
+
+Many of the Amiga's disk-based tools, utilities and other programs
+have been upgraded.  There are three new Preferences editors.  There
+is now iconic support for device mounting. 
+
+
+
+General 2.1 Disk Layout Changes
+===============================
+
+Some changes were made to the Workbench disk layout in 2.1.  There are a
+few reasons for this:
+
+		o  Need to accommodate localization
+		o  Need to accommodate CrossDOS
+		o  Attempt to simplify user's lives
+		o  Getting everything to fit on the disks
+
+The changes to the Workbench disk set include:
+
+o The 2.1 system software will be shipped on FFS floppies. This is mainly
+to increase available storage. 
+
+o There is now a Prefs drawer on the Extras disk.  This is where all the
+Preferences editors are located (instead of the Prefs drawer on the
+Workbench disk).  The Prefs drawer is maintained on the Workbench disk
+only to store ENVARC:
+
+o The Devs directory on Workbench now has an icon.  Devs/Printers and
+Devs/Keymaps also have icons.  (In addition each individual printer driver
+and keymap has an icon now.) The Monitors drawer is now inside of Devs.
+Finally, a new drawer called Devs/DOSDrivers has been added. 
+
+Devs/Monitors
+	Place where a user puts a monitor icon to enable it (and
+	make it selectable from the ScreenMode Preferences editor).
+Devs/Printers
+	Place where a user puts a printer icon to make it available
+	(i.e.,selectable from the Printer Preferences editor).
+Devs/Keymaps
+	Place where a user puts a keymap icon to make it available
+	(i.e., selectable from the Input Preferences editor).
+Devs/DOSDrivers
+	Place where a user puts a DOS driver (mount file) icon to
+	activate it. 
+
+The files that go in the DOSDrivers drawer are very similar to mount lists
+but they have icons so Workbench users can manipulate them.  See the
+discussion of the C/Mount command below for more information. 
+
+o A Storage drawer has been added to the Extras disk.  It contains the
+same four directories as in the Devs drawer (see above).  This is where
+things that are not currently used are kept.  For example, to enable a
+particular monitor type, the user is expected to drag the monitor icon
+from Storage/Monitors to Devs/Monitors.  This is also how printer drivers,
+keymaps and DOS drivers are installed by Workbench users. 
+
+The ability to install a DOS driver by dragging an icon means the
+Workbench user can now control what devices get mounted in his system.
+This is important for CrossDOS.  By simply double-clicking on the PC0
+icon, the user can activate MS-DOS device unit 0.  By dragging the PC0
+icon from Storage/DOSDrivers to Devs/DOSDrivers, the selection becomes
+permanent and PC0: will be available upon every reboot. 
+
+
+General 2.1 Improvements
+========================
+
+o Most system programs with a GUI are now localized and can be operated in
+multiple languages. 
+
+o Many 2.1 system programs now support a PUBSCREEN Tool Type or command
+line option which enables them to open on any public screen (not just
+Workbench). 
+
+o Many 2.1 system programs with a GUI understand Ctrl-C signals sent to
+them and quit. 
+
+o Many 2.1 system programs with a GUI listen for Ctrl-F.  When they
+receive this signal, they activate their window, bring it to the front,
+and unzip it if needed.  Ctrl-F is thus a sort of wake up call. 
+
+o The icons in 2.1 contain all the Tool Types their respective
+applications understand. The Tool Types are commented out in the form:
+
+			(PUBSCREEN=<public screen name>)
+
+The parentheses cause the Tool Types to be overlooked by Workbench.  The
+data in angled brackets needs to be filled-in by the user. 
+
+o 2.1 Commodities programs now use the DOS ReadArgs() function for command
+line parsing. 
+
+The following system files are no longer needed under 2.1 and are deleted
+by the installation procedure.
+ 
+· C/DiskDoctor		Removed for malpractice
+· Devs/Keymaps/usa1	Present in ROM.
+· Fonts/_bullet/if.ss 	Replaced by Fonts/_bullet/if.uc
+· System/AddMonitor	Functionality is now embedded in each monitor
+			file directly.
+· System/BindMonitor    and Naming modes is now done by the monitors
+			themselves in WBStartup/Mode_Names combination
+			with IPrefs which handles localization of the names! 
+· System/CLI.info     	Redundant.
+· System/DiskCopy.info	No need for an icon since the user can't
+			double-click on this program.
+· System/SetMap		The global keymap can now be selected from the
+			Input Preferences editor.  The new SetKeyboard
+			command lets you set the keymap for the current
+			console window.
+· Tools/Commodities/IHelp    Functionality has been absorbed by FKey
+
+
+Workbench 2.1 Disk Changes
+==========================
+
+Workbench2.1:C/BindDrivers
+--------------------------
+Got smaller.
+
+
+Workbench2.1:C/Copy
+-------------------
+Fixed bug where it wouldn't allow 0 byte files to be copied whenever the
+BUF argument was set to 0. 
+
+
+Workbench2.1:C/CPU
+------------------
+Added EXTERNALCACHE, NOEXTERNALCACHE, COPYBACK, and NOCOPYBACK options
+needed for 68040 support. 
+
+
+Workbench2.1:C/IconX
+--------------------
+There is now a STACK Tool Type that lets the stack of the script be
+specified.  There is also a USERSHELL Tool Type.  Setting "USERSHELL=YES"
+will cause the current user shell to be used for the script instead of the
+boot Shell. 
+
+IconX has a new WAIT Tool Type to specify a delay in seconds.  WAIT is the
+recommended Tool Type in the style guide.  (The old DELAY Tool Type
+specifies a delay in 50ths of a second.)
+
+Scripts started by IconX now inherit Workbench's path and prompt string.  
+
+The default window that is opened when there is no WINDOW parameter is now
+always as wide as the current screen instead of being hardcoded to 640
+pixels wide.  Also the default window spec now includes /AUTO to avoid
+mostly useless windows from opening. 
+
+
+Workbench2.1:C/Info
+------------------- 
+Now knows about DOS\2, DOS\3, DOS\4, DOS\5 and CrossDOS disk types.
+
+
+Workbench2.1:C/Install
+----------------------
+Install can now use the CHECK option on write-protected disks.  Also, it
+now supports DOS\2, DOS\3, DOS\4 and DOS\5 disk types.  The FFS
+command-line option is now ignored by the program. 
+
+Install now fails when trying to install a device without 512
+bytes/sector.  It prints an error message to that effect.  Also it now
+gives a meaningful error message when a disk can't be read or written to.
+It used to return with "no disk present" as an error. 
+
+
+Workbench2.1:C/IPrefs
+---------------------
+IPrefs is now localized and understands the new Locale, Keymap and Sound
+Preferences. 
+
+IPrefs now uses iffparse.library to interpret its IFF files and keeps
+diskfont.library and iffparse.library closed when they are not in use
+allowing them to be expunged.  With iffparse.library, IPrefs can now
+handle multiple IFF chunks within an IFF file.  This means that a single
+IFF PREF file can contain Preferences for many different elements. 
+
+IPrefs now knows about the new PUNT (Printer Unit) chunk saved by Printer
+Preferences.  Also it now reads and processes the new font.prefs file
+saved by Font Preferences and ignores the old sysfont.prefs and
+screenfont.prefs. 
+
+IPrefs also understands the new international monitor mode names.
+When a change to Locale Preferences is made, IPrefs now reads the
+sys/monitors.catalog catalog file and updates the name of all available
+display modes so they appear in the correct language. 
+
+IPrefs also knows about the unit # specification for multi-serial cards.
+
+ 
+Workbench2.1:C/List
+-------------------
+Added two new LFORMAT options.  Use %e to get just the extension for a
+file, and %m to get the name only (no ext).  Fixed problems in PAT and SUB
+options from 2.04 version. 
+
+ 
+Workbench2.1:C/LoadWB
+---------------------
+If the ROM is the final 2.04 ROM, it will do a magic patch that localizes
+Workbench to the current default locale.  Since this is done at LoadWB
+time, it will remain in effect until you quit Workbench and start again.
+If locale.library is not available, it will not localize Workbench. 
+
+Also, if the ROM is the final 2.04 ROM, it will do a magic patch that will
+fix the "Rename Error gets stuck" problem. 
+
+
+Workbench2.1:C/Mount
+--------------------
+Rewritten from BCPL to C (another one bites the dust) and localized with
+much better error reporting, including the filename, line and column
+number of where errors in MountLists occur. 
+
+Mount can now be run from Workbench.  This requires new-style MountLists
+of the form:
+
+/* Aux-Handler mount entry under 2.1 */
+Handler         = L:Aux-Handler       
+Stacksize       = 1000       
+Priority        = 5
+
+That is, the differences from old style MountLists are as follows:
+	o Only a single device can be defined per file.  
+	o The name of the device is not specified in the file and is
+	  instead the same as the name of  the file.  
+	o The # at the end of the entry can be ommited.
+
+This change will allow for easy installation and control of mountable
+devices from the Workbench by simply dragging and clicking icons. 
+
+The template for the Mount command is now:				
+
+		"DEVICE/M,FROM/K"
+    
+DEVICE/M lets multiple devices be mounted in one invocation.  Different
+things are done depending whether the device name argument ends with a
+colon.  For example:
+
+· Mount PIPE:
+         
+This will look for the file "DEVS:DOSDrivers/PIPE" and will process it if
+found.  This is a new style mount file that doesn't contain the name of
+the device within the mount file.  If the mount file is processed
+successfully, the Tool Types for "DEVS:DOSDrivers/PIPE.info" are then
+processed and override any settings from the mount file.  This is new
+behavior. 
+
+If "DEVS:DOSDrivers/PIPE" doesn't exist, an attempt is then made to find a
+"PIPE:" entry in "DEVS:MountList".  This is the compatible fall-back
+behavior. 
+
+· Mount PIPE
+         
+When there is no colon at the end of a device name argument, the name is
+taken as the filename of the mount file to process.  This filename can
+contain wildcards so something like the following is possible: Mount
+DEVS:DOSDrivers/~(#?.info).  This is new behavior. 
+
+· Mount PIPE FROM <mountlist>         
+Same as above but searches the file given in <mountlist>
+
+· Mount PIPE: FROM <mountlist>
+This will scan for a "PIPE:" entry in <mountlist>. This is compatible
+behavior. 
+
+String arguments can now be enclosed in double quotes which lets spaces be
+included such as:
+
+		Handler = "Boot HD:L/Queue-Handler"
+
+This is handy for mount list entries generated automatically
+
+Added Tool Type processing, any keyword that can be put in a mountlist can
+also be put as a Tool Type entry.  The Tool Type data overrides the data
+in the mountlist file itself. 
+
+Added ACTIVATE as a synonym to the MOUNT keyword.  This is mainly meant to
+eliminate the confusion between the Mount command and the MOUNT keyword.
+Also, since this is likely to be one of the most common Tool Types, it
+makes sense to give it a more meaningful name. 
+
+When mounting a file system, Mount now scans the file system resource list
+for entries having the same DOS type.  If an entry is found, that file
+system is used instead of attempting to load a new one from disk.  To
+force a file system to be loaded from disk even though a suitable entry is
+in the resource list, the FORCELOAD keyword has been added:
+
+	FORCELOAD = 0;   /* default, check the resource list before the disk */         
+	FORCELOAD = 1;   /* always load from disk */
+
+Using a file system from the resource list avoids having multiple copies
+of the file system code in memory at any one time.  This will make
+CrossDOS much less memory hungry. 
+
+No longer checks for absence of L:FastFileSystem, this was now redundant
+due to the scanning of the file system resource list. 
+
+The Unit field of the FileSysStartupMsg can now contain a C pointer to a C
+string.  The Startup field provided the ability for a handler to get a
+string, but it was not possible for a file system to get a string as
+parameter.  The Unit field makes it possible.  So if the Unit keyword is
+defined as:
+
+            Unit = "blah blah"
+
+then memory is allocated to hold the string and the fssm_Unit field points
+to it.  The pointer is a CPTR and the string is a regular C string. 
+
+
+Workbench2.1:C/SetFont
+----------------------
+Added check for size < 1.
+ 
+
+Workbench2.1:C/SetKeyboard
+--------------------------
+New command which replaces System/SetMap.  This can only be run from the
+Shell.  Template is "KEYMAP/A".  The command sets the keymap for the
+current console window.  Keymaps are searched for in the KEYMAPS: assign
+list. 
+
+
+Workbench2.1:C/SetPatch
+-----------------------
+SetPatch now just turns on the data cache and will report this as one of
+the patches it installs.  This fixes a problem with earlier versions of
+SetPatch always playing with the caches. 
+
+Added code to support the loading/opening of the 68040 support library
+(68040.library). 
+
+Fixed BURST mode.
+
+Added patch for Intuition IAddress bug.
+
+Added patch to fix up the line-a exception which is munged at boot time.
+This patch will cause an Enforcer hit if you run Enforcer before SetPatch
+is run the first time. 
+
+Added the SetRGB4() and LoadRGB4() interrupt patches.
+
+Added the moving of the CIA handler priority to 0 if the priority is lower
+than 0. 
+
+Patches console.device BeginIO() such that CMD_CLEAR works and no longer
+trashes memory. 
+
+Added a patch for the Display Database for V37.175 Kickstart.  What this
+does is catch any routine in graphics that could have caused a dynamic
+unpacking of the database and check if the dynamic unpacking was about to
+happen.  If it was, it would fail the routine rather than call it since
+the monitor was not yet added to the system.  This fixes the problem where
+a dynamic unpacking will cause the system to crash in a very bad way.  It
+also makes the monitor system more consistent. 
+
+Added patch that will FreeMem() the moniterm memory buffers.  This gives
+over 2K of Chip RAM back to the system.  (Unused memory...) This requires
+the new A2024 monitor icon if you wish to run A2024 after this SetPatch.
+This patch will only run in V37 graphics. 
+
+Added the two patches to fix the holes in the V37 shared semaphore system.
+The patches are installed for V37.160 Exec and below. 
+
+Added the REVERSE keyword which was requested by CDTV and is, in general,
+a good thing to have for "tweaking" of the system. 
+
+Added a patch that will use the more correct RAMSEY burst mode settings if
+you have a 68040 CPU on an A3000 machine running 37.175.  This should help
+out the DMA problems of some of the 68040 systems out there (because of a
+bug in the DMAC/RAMSEY with SCRAM chips in page mode). 
+
+Added the high-density floppy drive patch.
+
+
+Workbench2.1:C/Version 
+----------------------
+The template is now:
+
+	NAME,VERSION/N,REVISION/N,UNIT/N,FILE/S,INTERNAL/S,RES/S,FULL/S
+
+The difference is the addition of /N after VERSION, REVISION, and UNIT. 
+
+Version no longer calls OpenDevice(), and instead checks the Exec device
+list itself, and does LoadSeg() of the device when needed.  UNIT option is
+now obsolete because of this. 
+
+Corrected handling of version/revision check.  The revision number is now
+looked at only if no version number is supplied, or if the supplied
+version number matches that of the file.  Also Version now sets error
+codes correctly when bad arguments are provided and no longer accesses
+illegal memory when doing: Version "".  Also now handles version strings
+where the filename has a period. 
+
+ 
+Workbench:Devs/clipboard.device
+-------------------------------
+Fixed bug that caused a crash during open, I/O and close of clipboard
+units when performed by multiple tasks. 
+
+ 
+Workbench2.1:Devs/mfm.device
+----------------------------
+New device in support of CrossDOS. Allows Amiga floppy drives to read
+MS-DOS PC-format disks.  Interface is similar to trackdisk.device
+
+ 
+Workbench2.1:Devs/postscript_init.ps 
+------------------------------------
+New file needed by the PostScript printer driver.
+
+ 
+Workbench2.1:Devs/printer.device 
+--------------------------------
+Preferences.i/h now has fields in it for the printer.device that can be
+used to specify a device name, and unit number.  This is needed for the
+Printer Preferences UNIT option and lets the printer.device output to any
+port of a multi-serial card, or even to any other device (although we
+don't have a UI to let the user do this yet)
+
+The printer.device now looks for the printer drivers in the PRINTERS:
+assign list first, then in DEVS:printers. 
+
+The printer.device messages are now localized and it now uses
+EasyRequest() instead of AutoRequest() to display messages. 
+ 
+
+Workbench2.1:L/CrossDOSFileSystem
+---------------------------------
+CrossDOS file system allowing AmigaDOS to read and write MS-DOS PC-format
+disks. 
+
+
+Workbench2.1:L/FileSystem_Trans/#?
+----------------------------------
+CrossDOS translation tables.  These serve to determine how 8-bit ASCII is
+mapped between Amiga and PC file systems.  A listing of this directory in
+shown in the CrossDOS Preferences program. 
+
+
+Workbench2.1:Libs/asl.library
+-----------------------------
+The ASL library has been extensively revised for the 2.1 release of the
+Amiga OS.  The main changes to ASL library of interest to programmers are
+as follows:
+
+o Implemented a new ScreenMode requester.
+
+o There are many new options available for better program control of the
+requesters, see asl.doc for more info. 
+
+o New <libraries/asl.h> and <libraries/asl.i> files with new consistent
+names for everything. 
+
+o Additional changes in the behavior of all ASL requesters are:
+  -------------------------------------------------------------
+Localized all requesters.  By default, they will use the system's current
+locale.  An application can also override this and pass in its own locale. 
+
+All requesters are now font-sensitive.  By default, the screen's current
+font is used.  An application can override this and provide its own font. 
+
+All requesters can now use a screen pointer, a public screen name, or a
+window pointer to set the screen on which to open. 
+
+All requesters can now open an invisible Intuition requester and put up a
+busy pointer in the calling application's window, effectively putting that
+window to sleep until the requester is satisfied. 
+
+All requesters now have Next and Previous items in the Control menu. 
+
+All requesters can now use the up and down cursor keys to scroll the
+listview.  Alt-Cursor brings you to the top/bottom of the file list,
+Shift-Cursor moves you by one viewful, and the cursor keys by themselves
+move you one item at a time. 
+
+o Changes to 2.1 ASL file requesters are as follows:
+  --------------------------------------------------
+The file requester now displays file sizes, date and time for files.  The
+volume display shows the volume name, device name, number of % used, Ks
+free and Ks used (just like a Workbench volume window). 
+
+A file requester is now an AppWindow.  Drop any icon on it, and the path
+of that icon goes in the Drawer gadget, while its name lands in the File
+gadget. 
+
+Clicking the middle mouse button when neither Shift or Alt keys are held
+down brings up the volume list. 
+
+File requesters now let you delete files by selecting the "Delete" menu
+item in the Control menu. 
+
+The file requester now uses correct highlighting method and does
+multiselect in a manner consistent with Workbench (you need to hold down
+the shift key to do multiselect). 
+
+File requester is between 2 and 7 times faster at loading a directory
+listing
+
+Added "drive LED" simulation.  The light turns on whenever a directory is
+in the process of being loaded and turns off when the directory is
+completely loaded. 
+
+Multiselect mode in the file requester works correctly when entering a
+name in the string gadget.  Previously, names in string gadgets were
+ignored, making it impossible to use a multiselect file requester from the
+keyboard. 
+
+Typing text in the File gadget now causes the list view to resynchronize
+and display files which start with the same letters. 
+
+Selecting any menu item, clicking in the list view, on the Volumes gadget
+or the Parent gadgets now activates the File gadget (or Drawer gadget if
+in directory-only mode). 
+
+o Changes to the 2.1 ASL font requester are:
+  ------------------------------------------
+
+Font requester now does caching of the font list.  That means it will
+display the lists of fonts many times faster than previously. 
+
+
+Workbench2.1:Libs/bullet.library
+--------------------------------
+This is the new Compugraphic outline font engine.  See bullet.doc for more
+info. 
+
+
+Workbench2.1:Libs/commodities.library
+-------------------------------------
+Changed the function SetCxObjPri().  This function now returns the
+previous priority of the object.  Added a new function: MatchIX().
+Previously, this function was internal but now is available to
+applications.  It matches an input event to a commodity input expression.
+See commodities.doc for more information. 
+
+Added <rawmouse> code strings.  This enables the use of events of type
+rawmouse.  The new strings are:
+
+		MOUSE_LEFTPRESS         
+		MOUSE_MIDDLEPRESS 
+		MOUSE_RIGHTPRESS
+
+These are the names to describe the mouse button presses.  Not to be
+confused with mouse button qualifiers.  Example usage would be to specify
+as CX_POPKEY sequence for a commodity:
+
+		CX_POPKEY=rawmouse mouse_middlepress
+
+The above would cause the commodity to open its window whenever the middle
+mouse button is depressed. 
+
+It is now illegal to specify <rawkey> codes for non-rawkey events.  The
+error was not being caught. 
+
+Synonyms were added for event qualifiers.  They used to have
+programmer-level names, now the synonyms offer something more consistent
+and useable to the normal user (as opposed to us abnormal
+programmer-types).  These qualifiers can be specified in mixed-case. 
+
+
+The possible qualifiers are:
+
+Original			New Synonyms
+LCOMMAND		LEFT_COMMAND, LAMIGA, LEFT_AMIGA
+RCOMMAND		RIGHT_COMMAND, RAMIGA, RIGHT_AMIGA
+LSHIFT			LEFT_SHIFT
+RSHIFT			RIGHT_SHIFT
+LALT			LEFT_ALT
+RALT			RIGHT_ALT
+CAPSLOCK		CAPS_LOCK
+CONTROL			CTRL
+NUMERICPAD		NUMERIC_PAD, NUMPAD, NUM_PAD
+LBUTTON			LEFTBUTTON, LEFT_BUTTON
+MIDBUTTON		MBUTTON, MIDDLEBUTTON, MIDDLE_BUTTON
+RBUTTON			RIGHTBUTTON, RIGHT_BUTTON
+RELATIVEMOUSE         
+REPEAT
+
+ALT, SHIFT and CAPS work as before.
+
+Synonyms were added for keyboard sequences.  Support was also added for
+the extended Amiga keyboard.  The possible keyboard sequences are:
+
+BACKSPACE  					F1..F12  
+BREAK  						HELP  
+COMMA  						HOME  
+DOWN, CURSOR_DOWN  				INSERT  	
+LEFT, CURSOR_LEFT  				PAGE_DOWN  
+RIGHT, CURSOR_RIGHT  				PAGE_UP  
+UP, CURSOR_UP  					PAUSE  
+DEL, DELETE  					RETURN  
+END  						SPACE, SPACEBAR  
+ENTER  						TAB
+ESC, ESCAPE  
+
+Fixed various bugs.  Fixed reentrancy problems in ParseIX().  Fixed bug
+with the library freeing signal bits of the wrong task on exit, resulting
+in a potentially dangerous situation.  Fixed several low-memory
+Enforcer/MungWall bugs.  Fixed incorrect routing of events by translator
+objects.  (The translated events would skip the remainder of the input
+network instead of being inserted midstream like the docs describe.) Added
+warning in Autodoc concerning the fact translator objects insert their
+translation list in reverse order than what you ask them.  (This bug
+cannot be fixed without endangering compatibility.) Fixed a bug in
+ParseIX() that prevented mouse button qualifiers from working. 
+
+
+Workbench2.1:Libs/diskfont.library
+----------------------------------
+New version supporting external font engines.
+
+
+Workbench2.1:Libs/locale.library
+--------------------------------
+New library that provides the core of system localization.  This library
+helps Amiga programmers create applications that work in more than one
+language.  See locale.doc for more information. 
+ 
+
+Workbench2.1:Libs/mathieeedoubbas.library
+-----------------------------------------
+Fixes the DPFix() routine which was trashing d3 under certain input values.
+
+
+Workbench2.1:System/CLI
+----------------------- 
+Now can start up a user shell instead of just the boot Shell.  Every Shell
+started from Workbench now consumes around 7.5K less memory than in 2.04.
+This is because the CLI program itself now quits once the Shell is opened
+instead of waiting for it to close.  This also means that you can now
+start a Shell from Workbench, and be able to quit Workbench.  In 2.04, it
+would complain that there were some running programs. 
+ 
+The CLI now copies its prompt from Workbench.  Also the default window
+that is opened when there is no WINDOW parameter is now always as wide as
+the current screen instead of hardcoded to 640 pixels wide. 
+ 
+
+Workbench2.1:System/DiskCopy
+----------------------------
+Messages are now localized.  DiskCopy now has a GUI when running from
+Workbench with a fuel gauge and a Stop gadget that looks identical to the
+Format GUI. 
+     
+Hitting Ctrl-C at the startup prompt is now sufficient to stop the copy
+operation.  You no longer need to enter Ctrl-C followed by Return. 
+     
+Marks the disks it is copying to as "BAD\0" so if the copy operation is
+aborted, Workbench will show the disks as "????"
+
+
+Workbench2.1:System/Format
+--------------------------
+The Format command is now localized and has a GUI when run from Workbench.
+Here's a summary of the controls:
+
+· The "Current Information" section shows the device name to be formatted,
+the name of the volume in this device (if any), the capacity of the
+device, and the percentage of use.  This information is updated if disks
+are inserted or removed while the window is up. 
+
+·  The "New Volume Name" text gadget lets you specify the name for the
+volume after format. 
+
+·  The "Put Trashcan" checkbox gadget lets you specify whether to put a
+trashcan on the formatted disk. 
+
+·  The "Fast File System" gadget lets you specify whether to use FFS on
+the volume. 
+
+·  The "International Mode" gadget lets you specify whether to format
+using the international FS or not (DOS\2 and DOS\3). 
+
+·  The "Format" gadget starts the formatting.
+
+·  The "Quick Format" gadget starts quick mode formatting (root block
+formatting only). 
+
+·  The "Cancel" gadget cancels the operation.
+
+The format program can now be started by double-clicking its icon.  This
+brings up a list of all devices that can be formatted.  After selecting
+"Format" or "Quick Format", a requester appears asking for confirmation.
+The requester lists the name of the device about to be formatted, or the
+name of the volume on this device if available, as well as the capacity of
+the device, and its current percentage of use. 
+
+After confirming "Format" in the above requester, two things may happen.
+If the device being formatted is smaller than 3Mb in size, the formatting
+begins immediately.  If the device is larger, then another different
+confirmation requester appears.  Clicking "Format" on this requester will
+actually start the formatting.  The reason for this second requester is
+for added protection against formatting your harddrive. 
+
+During the formatting process, a fuel gauge is displayed showing the
+progress of the formatting.  A "Stop" gadget is also present to let you
+abort the operation. 
+
+The template from the Shell for the Format command is now:
+DEVICE=DRIVE/K/A,NAME/K/A,OFS/S,FFS/S,INTL=INTERNATIONAL/S,
+NOINTL=NOINTERNATIONAL/S,NOICONS/S,QUICK/S
+
+DEVICE was added as a synonym for DRIVE, since this is the word used
+elsewhere in the system ("Please insert <blah> in device DF0" for
+example). 
+
+The INTL or INTERNATIONAL options let you specify international file
+system (DOS\2 or DOS\3). 
+
+The OFS option forces the use of OFS on the disk.  This is for devices
+which have FFS as default.  The NOINTL option serves the same purpose for
+the international mode operation. 
+
+So, specifying neither OFS or FFS will give you the default FS for the
+device.  OFS will always give you OFS, and FFS will always give you FFS.
+Same logic applies for INTL/NOINTL.  None of these switches do anything on
+devices of other DOS types, like CrossDOS for example. 
+
+Hitting Ctrl-C at the startup prompt is now sufficient to stop the format
+operation, no longer need to enter Ctrl-C followed by Return. 
+
+Format now names its disks "BAD\0" when formatting so that Workbench will
+show them as "DF0:????" if the format operation fails, instead of
+"DF0:COPY".  Also it now returns ERROR_OBJECT_IN_USE if a device is
+already inhibited when it tries to format and returns a correct error
+message if there is a media error, instead of saying "Error 1."
+
+
+Workbench2.1:System/Fountain (aka Intellifont)
+----------------------------------------------
+Uses new loader code that works with hintless fonts. 
+
+Fixed numerous bugs.  Changed p1[6] to p1[7] in the HPFontAlias structure.
+This fixes the problem with long type-face names.  Window height is now
+correctly calculated when using a virtual screen (this bug was the most
+reported bug for Fountain).  Changed all buttons to 14 pixels high (to be
+consistent with other Workbench programs).  Changed list view tags to be
+consistent with other Workbench programs.  Now recognizes fontindx.fi
+files that don't have a NULL pad byte.  Changed a strcmp() to Stricmp() so
+that detection of _Bullet_Outlines is now case-insensitive. 
+
+Fountain was creating wrong .otag files if the font didn't contain a
+OT_SymbolSet.  This is now corrected.  Cycling through the Destinations,
+Fountain would foul up if a temporary name was added to the list.  This is
+now corrected.  Fountain was filling out the Source text entry gadget if
+there was a FAIS disk inserted, but wasn't filling out the list view with
+the available typefaces.  This is now corrected.  Fixed two errors that
+caused a crash when installing BRUSH font. 
+ 
+Now disables the Install button if there isn't anything to install.  Also,
+disables the Modify button if there isn't anything to modify.  Changed
+window title to "Fountain Installing..." while installing typefaces. 
+
+
+Workbench2.1:System/InitPrinter
+-------------------------------
+Got smaller.
+
+
+Workbench2.1:System/NoFastMem
+-----------------------------
+Got smaller and, in addition to setting MEMF_CHIP in all memory
+allocations, it now also clears MEMF_FAST. 
+
+
+Workbench2.1:System/Shell.info
+------------------------------
+Added WINDOW, STACK and FROM Tool Types.  
+
+
+Workbench2.1:Utilities/Clock
+----------------------------
+Fully localized and now conforms more to the style guide layout and menu
+recommendations. 
+
+Workbench2.1:Utilities/Display
+------------------------------
+Any clipboard unit ILBM can now be displayed with -cN where N=clipboard
+unit number (default 0).  Error messages are now localized and Display now
+notifies the user if it has to delve into a complex file to find the ILBM.
+Fixed wrong error message printed instead of File Not Found.  Fixed
+improper returning of error code 1 when successful (now 0).  Fixed bad
+test for public screen (also fixes a crash under 1.3). 
+
+ 
+Workbench2.1:Utilities/More
+---------------------------
+Localized messages and fixed range check so More won't complain that
+character 0x9b is binary. 
+
+
+
+
+
+
+
+Extras 2.1 Disk Changes
+=======================
+
+Extras2.1:Prefs/#? 
+------------------
+All Preferences editors are localized.  Preferences editor windows are now
+made into AppWindows.  That is, you can drop .prefs file icons on them. 
+
+There is now a new PUBSCREEN Tool Type (and command line argument) to
+bring up the Preferences editors on any public screen.  Also, a new Tool
+Type, CREATEICONS, can be set to yes or no. 
+
+The name of the last menu is changed from "Options/Save Icons?" to
+"Settings/Create Icons?" to match the style guide. 
+
+The default state of the "Settings/Create Icons?" option is set to TRUE
+when the Preferences editor is run from Workbench, and FALSE when it is
+run from the Shell. 
+
+Editors now use ASL's new automatic icon filtering feature as well as the
+new ASLFR_SleepWindow tag which puts the calling window to sleep when a
+file requester is opened. 
+
+Unlike 2.04, the Preferences editors now parse Tool Types in the Tool
+icons in addition to those from Project icons. 
+
+Editors now do a ScreenToFront() for the screen on which they open when
+starting up. 
+
+ 
+Extras2.1:Prefs/Font
+--------------------
+This editor now has an improved UI using asl.library's font requester.  
+
+
+Extras2.1:Prefs/Input 
+---------------------
+Now supports keymap selection.  
+
+
+Extras2.1:Prefs/Locale
+----------------------
+This is a new Preferences editor that lets you choose in which language to
+operate the system.  This is the user's control over system localization. 
+
+ 
+Extras2.1:Prefs/Overscan 
+------------------------
+The Overscan editor no longer uses menus in the edit screen, and instead
+has a pair of Use/Cancel gadgets. 
+
+There is now a real-time display of the current size and position as the
+overscan areas are being edited.  The overscan editing screen now has a
+second bitplane whenever a genlocked system is being used.  This lets the
+border around the edit area be seen through, while everything within the
+edit area is opaque. 
+
+Changed "Standard Overscan" to "Graphics Overscan" which matches ASL
+ScreenMode requester terminology. 
+
+The default view position and preferred mode for editing now come from the
+graphics database, instead of being coded into Overscan. 
+
+Now handles monitor types that are unknown to it.
+
+On the edit screen, the menu button now cancels a sizing/moving operation.
+On the edit screen, a sizing operation is aborted if another window is
+made active. 
+
+ 
+Extras2.1:Prefs/Palette
+-----------------------
+Palette now fully supports N bits per gun, for N <= 8.  This means modes
+such as Super72 or Multiscan will only have 2 bits per gun in the sliders
+and will finally work right. 
+
+
+Extras2.1:Prefs/Pointer
+-----------------------
+Added clipboard Cut, Copy and Paste of ILBM's.  Added Erase and Undo.
+Added CLIPUNIT command line option and Tool Type. 
+
+
+Extras2.1:Prefs/Printer 
+-----------------------
+There is now a UNIT command line option and Tool Type which causes an
+extra gadget to be displayed to let the user select which device unit the
+printer will send its output to. 
+
+Now outputs a PUNT (Printer Unit) chunk in the printer .prefs file.
+
+Now scans for printers in the PRINTERS: assign list instead of in
+DEVS:Printers. 
+
+
+Extras2.1:Prefs/PrinterGfx
+--------------------------
+Now has the "Options/Use Metric System" menu option, with its initial
+setting determined by the current locale. 
+
+No longer ghosts the Threshold gadget which allows the non-standard use of
+this gadget by the HP Deskjet 500C driver. 
+
+
+Extras2.1:Prefs/PrinterPS
+-------------------------
+New PostScript printer driver preferences editor enabling control of
+numerous features of PostScript printers.  Here's a brief summary of most
+of the controls:
+
+Driver Mode:
+
+Lets you select between "PostScript" or "Pass Through".  The "PostScript"
+mode will cause the driver to convert any text output sent to it to
+"PostScript" and send the results over to the printer.  The "Pass Through"
+option will force the driver to leave the data alone and send it directly
+to the printer.  The "Pass Through" option lets programs that output
+PostScript directly function correctly by sending their PostScript code
+directly to the printer and not treating it as a text file. 
+ 
+Copies:
+
+This specifies the number of copies of each page to print, from 1 to 99. 
+
+Paper Format:
+
+Lets the user select between "U.S. Letter", "U.S. Legal", "DIN A4" and
+"Custom".  This defines the size of the paper being used.  Clicking on
+this gadget sets the values in the "Paper Width" and "Paper Height" cycle
+gadget to match what the format dictates. 
+ 
+Paper Width and Paper Height:
+
+These let you specify the exact paper dimensions being used.  These
+gadgets are ghosted unless the "Paper Format" gadget is set to "Custom". 
+ 
+Horizontal DPI and Vertical DPI:
+
+Lets you specify the dots per inch to use in the printout.  The driver
+will assume that DPI for all of its dithering and other processing. 
+ 
+Panel Cycle Gadget:
+ 
+This lets you select which of the four additional option panels is
+currently displayed.  The four panels are "Text Options", "Text
+Dimensions", "Graphics Options", and "Graphics Dimensions".  The panel
+selected determines which of the following gadgets is displayed.  The
+reason to use gadget panels is due to lack of space in a 640x200
+resolution display. 
+
+o Text Options
+	· Font
+	This lets you select which font to use in printout.
+	These are built-in printer fonts and are used whenever text
+	is sent to the printer. 
+
+	· Pitch		
+	Lets you select either "Normal", "Compressed", or "Expanded"
+	print faces.
+
+	· Orientation
+	Lets you select between "Portrait" or "Landscape" printing.
+	Landscape printing is useful for things like envelopes.
+
+	· Tab
+	Lets you specify how to handle tabs in the printed file.
+	The available selections are "4 characters", "8 characters",
+	"1/4 Inch", "1/2 Inch", and "1 	Inch".  The inch settings are
+	useful when printing with a proportional font.
+
+o Text Dimensions
+	· Margin Gadgets
+	Lets you specify all four margins for text printing.  The values
+	entered are relative to the left/top edge of the paper as well
+	as to the paper's width and height values specified previously.
+
+	· Font Point Size
+	Lets you specify the size of the font to use whenever text is
+	sent to the printer.
+
+	· Line Leading
+	Lets you specify the amount of leading betweens printed lines
+	of text.  Leading is the distance between two adjacent lines.
+
+	· Lines Per Inch
+	This text display area shows the number of lines per inch which
+	is calculated based on the values of the "Font Point Size" and
+	"Line Leading".
+
+	· Lines Per Page
+	This text display area shows the number of lines per inch which
+ 	is calculated based on the values of the "Font Point Size",
+	"Line Leading", "Paper Height", "Top Margin", and "Bottom Margin".
+
+o Graphics Options
+	· Edge Dimension
+	Similar to the four margin gadgets, but used for printing.
+
+	Gadgets		
+	· Shading
+	Lets you select between "Black & White", "Grey Scale", and "Color".
+
+o Graphics Scaling
+
+	· Aspect
+	When printing graphics, this lets you specify whether the picture
+	should be printed normally, or sideways.  This is the first
+	operation done on a graphics, it happens before the scaling.
+
+	· Scaling Type
+	Lets you select one of 7 scaling types.  All types control how
+	the picture is printed within the user specified printing region.
+
+	1 - No scaling. This prints the picture as is.  The picture may
+	be clipped on the right and bottom edges to fit within the print
+	region specified. 
+
+	2 - Aspect preserving scale with horizontal bias.  This makes
+	the horizontal dimension as wide as the print region, and scales
+	the vertical dimension by whatever is needed to preserve the
+	aspect ratio. The vertical dimension is clipped to the print
+	region if it gets too tall.
+
+	3 - Aspect preserving scale with vertical bias.  This makes the
+	vertical dimension as tall as the print region, and scales the
+	horizontal dimension by whatever is needed to preserve the
+	aspect ratio.  The horizontal dimension is clipped to the print
+	region if it gets too wide.
+
+	4 - Aspect preserving maximum scale.  This makes the picture as
+	big as possible while ensuring it fits in the print region and
+	preserves its aspect ratio.
+
+	5 - Aspect insensitive scale with no bias.  This makes the
+	picture take up the entire print region in both dimensions and
+	will distort the aspect ratio if needed.
+
+	6 - Aspect insensitive scale with horizontal bias.  This makes
+	the horizontal dimension as wide as the print region, and scales
+	the vertical dimension by whatever is needed to preserve the
+	aspect ratio, or until the vertical dimension gets as tall as
+	the print region.  The difference between this type and type #2
+	is that the vertical dimension is made to always fit within the
+	print region instead of being clipped.
+
+	7 - Aspect insensitive scale with vertical bias.  This makes the
+	vertical dimension as tall as the print region, and scales the
+	horizontal dimension by whatever is needed to preserve the aspect
+	ratio, or until the horizontal dimension gets as wide as the
+	print region.  The difference between this type and type #3 is
+	that the horizontal dimension is made to always fit within the
+	print region instead of being clipped.
+
+	· Scaling Math
+	Determines whether "Integer" or "Fractional" math is to be used
+	during scaling operations.
+
+	· Centering
+	This lets you specify no centering, horizontal centering,
+	vertical centering, or both horizontal and vertical.
+	The centering operation is performed last in the printing process,
+	after the scaling.
+
+	· Scaling
+	These show a sample picture being scaled to various target sizes. 
+
+ 	· Samples
+	Selecting different scaling types changes the samples to
+	reflect what would happen on the printed page.
+ 
+
+
+Extras2.1:Prefs/Serial 
+----------------------
+Added UNIT command-line option and Tool Type to support the A2232 board.
+When this option is specified, an additional gadget is added to the window
+to let you set the default A2232 unit.  This makes the old
+A2232_Preferences program obsolete. 
+
+
+Extras2.1:Prefs/ScreenMode
+--------------------------
+Now has better code to handle unnamed modes.  The mode is now always
+preceded by the monitor name, just like the ASL ScreenMode requester
+names. 
+
+
+Extras2.1:Prefs/Sound
+---------------------
+This is a new preferences editor that lets you control what happens when a
+DisplayBeep() function call is made.  Lets you replace the screen flash by
+an audio beep or an IFF sampled sound. 
+
+
+Extras2.1:Prefs/Time
+-------------------- 
+Time now has a SAVE command-line option.  This causes the program to just
+copy the current system time to the battery clock
+
+It will adapt its display to start weeks on the days indicated in the
+current locale.  Also has a localized time display region to enhance
+useability of the Hours and Minutes sliders. 
+
+Now has a Project menu with a single Quit item.
+
+
+Extras2.1:Prefs/WBPattern
+-------------------------
+Added clipboard Cut, Copy and Paste of ILBMs and new preset patterns.
+Added CLIPUNIT command line option and Tool Type. 
+
+
+Extras2.1:Storage/Keymaps/f 
+---------------------------
+The numeric keys (not the keypad) were made capsable.
+
+
+Extras2.1:Storage/Keymaps/po 
+----------------------------
+New Portuguese keymap.
+
+
+Extras2.1:Storage/Monitors/#? 
+-----------------------------
+These replace the 2.04 (V37) monitors, and render C:AddMonitor and
+C:BindMonitor obsolete.  These are true executables as opposed to the V37
+monitor files which contained only data.  The seven monitor types
+supported under 2.1 are:
+
+	· NTSC		· Euro36        (36Hz refresh rate)    
+	· PAL 		· Euro72        (72Hz refresh rate)         
+	· Multiscan     · Super72       (72Hz, higher resolution)
+	· A2024         
+        
+Previously, it was possible to change some of the monitor hardware values
+such as BEAMCON0 and VBSTRT from either the command line or with Tool
+Types in the icon.  However, as the monitors were started up by the
+startup-sequence, it was not possible to make the required changes without
+editing the startup-sequence which is now considered a bad thing.  So,
+starting with this release, the .info file is always examined for the Tool
+Types, irrespective of whether the program is run from a Shell or
+Workbench.  The command line parsing has been removed. 
+ 
+If there are Shell arguments, they now override the .info Tool Types.
+     
+The new A2024 "fixes" the blank right hand edge problem. ("Fixes" because
+it actually uses a side affect of the chips as it always has done).  To
+get the 1024 pixels in 10Hz required a very overscanned Lores screen, with
+a greater DIWSTOPX value than is supported (DIWSTOPX = 465,
+MaxDeniseColumns = 455).  However, when scrolling, this would require a
+DDFSTOP value greater than 0xd8, which is not possible.  So, when you drag
+this screen horizontally, you will still lose some pixels at the right
+hand side.  In the default position though, everything is fine. 
+     
+The A2024 now allocates the GfxBase private data structures itself instead
+of graphics doing it at powerup.  This is so that we can save 3K of Chip
+RAM in SetPatch by freeing this data.  Anyone not using an A2024 will
+benefit (it's suspected that this is a relatively high % of our users).
+In addition to the above changes, there is now a double buffer attribute
+for monitors.  Also, some memory allocation problems were fixed.  Finally,
+a bug in which the monitor wouldn't be initialized if there was no .info
+file was corrected. 
+
+
+Extras2.1:Storage/Printers/#?
+----------------------------- 
+All drivers now support A4 paper sizes.  Changes to individual drivers are
+as follows:
+
+ PostScript	New PostScript printer driver.  See the description of
+		the new PrinterPS Preferences editor for information on
+		controls.
+
+ CBM_MPS1000	A bug fix - the sequences for elite, and compressed were
+		changed post 1.2, and have been broken since then.
+
+ EpsonX		A bug fix: upper-case-I-acute-accent was being printed
+  and EpsonQ	as grave.
+
+ HP_LaserJet	Minor change - 60 second timeout for 300 DPI graphics
+		(30 seconds otherwise) - this is a common complaint;
+		the driver times out too soon at 300 DPI.  Also StartCmd
+		wasn't NULL terminated.  This has been corrected.
+
+ HP_DeskJet	This is a new and improved version of the driver.
+		The old one will still be included on Workbench disks
+		as HP_DeskJetOld.  The old HP_Deskjet driver only
+		supported the B&W HP_Deskjet printers.  The new
+		HP_Deskjet driver also supports the new (and extremely
+ 		popular) HP_500C color deskjet printer.  This is a
+		300 DPI color ink printer.
+		In addition to supporting color graphic dumps on
+		the HP_500C, the driver supports (via DENSITY) the
+		various shingling modes available on the 500C, and
+		provides color and lightness correction via THRESHOLD
+ 		(a non-standard use of the THRESHOLD gadget).
+		If THRESHOLD is set to 1, no corrections are made.
+		This setting is required when printing directly from
+		any package which does its own enhanced dithering (such as
+	 	Art Department Pro).
+
+		When printing with software that uses standard Amiga
+		printer device color printing, the THRESHOLD gadget can
+		lighten the output.  Settings from 2 through 15 provide
+		successively lighter output.  When printing in gray
+		scale, there is just one fixed correction.  THRESHOLD 1
+		will apply no correction, and any other setting will
+		apply the fixed lightening correction.
+
+ CanonBJ10	New driver.
+
+
+Extras2.1:Tools/Calculator
+--------------------------
+Calculator is now localized and font-sensitive.  Also now uses
+gadtools.library instead of custom 3D look. 
+     
+Added more keyboard shortcuts for gadgets. The following are now
+supported:
+
+0..9			for the number gadgets       
++			for addition 
+-			for subtraction 
+*, x, X or ALT-X    	for multiplication (exact keystrokes depend on
+			keymap)       
+/ or SHIFT-ALT-X	for division (exact keystrokes depend on keymap)
+= or RETURN/ENTER   	for result       
+.                   	for the decimal point (also depends on locale)       
+s or S or ALT-Z		for unary minus (the +/-) (S for Sign)       
+BACKSPACE		to delete the last char entered (like the <- key)
+DEL or A            	to clear all (CA key)       
+E			to clear the entry (CE key)       
+Ctrl-C or ESC		to quit
+
+Added menus to the program, including an Edit menu which lets you cut and
+copy the current number to the clipboard, as well as paste numbers into
+the calculator.  In fact, you can paste more than numbers!  That is, if
+the clipboard contains "1+2+3+4=" and you paste this in the calculator,
+the expression is evaluated and the result is displayed. 
+
+Added a Calculator Tape window to display data as it is being processed.
+Added the TAPE command line option or Tool Type entry that lets yoy
+specify the name of the console to open when opening the Calculator Tape
+window. 
+     
+Added the PUBSCREEN command line option and Tool Type that lets a public
+screen name be specified. 
+
+Now uses the Amiga character set's multiply and divide symbols to
+represent these operations instead of * and /. 
+
+
+Extras2.1:Tools/Commodities/AutoPoint
+-------------------------------------
+AutoPoint now has messages localized and consumes much less CPU time when
+it is just sitting waiting in the input stream.  Also uses ReadArgs() to
+parse command-line options.  Template is:
+		CX_PRIORITY/N/K
+
+
+Extras2.1:Tools/Commodities/Blanker 
+-----------------------------------
+Blanker now has messages localized and consumes much less CPU time when it
+is just sitting waiting in the input stream.  Also does optional splines
+and color cycling. 
+     
+Blanker now uses ReadArgs() to parse command-line options.  Template is:
+		CX_PRIORITY/N/K,CX_POPKEY/K,CX_POPUP/K,SECONDS/N/K,
+			CYCLECOLORS/K, ANIMATION/K:
+     
+SECONDS takes the number of seconds before blanking.  CYCLECOLORS takes
+"YES" or "NO" to set color cycling.  ANIMATION takes "YES" or "NO" to do
+splines or not.  Tool Types exist that match the command-line template. 
+
+
+Extras2.1:Tools/Commodities/ClickToFront
+----------------------------------------
+Now has messages localized and consumes much less CPU time when its just
+sitting waiting in the input stream.  Also uses ReadArgs() to parse
+command-line options.  Template is:
+		CX_PRIORITY/N/K,QUALIFIER/K
+  
+
+Extras2.1:Tools/Commodities/CrossDOS
+------------------------------------
+This is a new CrossDOS control program that lets you set three parameters
+for every CrossDOS device currently mounted.  (The CrossDOS devices list
+view lets you pick the device to work on.)
+
+The Text Filtering checkbox lets you specify whether CrossDOS should
+filter text files. 
+
+The Text Translation checkbox lets you specify whether CrossDOS should
+translate ASCII characters >127. 
+
+The Translation Types listview lets you choose which type of translation
+to apply whenever the Text Translation checkbox is selected. 
+
+
+Extras2.1:Tools/Commodities/Exchange
+------------------------------------
+Now has messages localized and has a new more easily understood and more
+standard interface.  Also uses ReadArgs() to parse command-line options.
+Template is:
+
+		CX_PRIORITY/N/K,CX_POPKEY/K,CX_POPUP/K
+ 
+
+Extras2.1:Tools/Commodities/FKey
+--------------------------------
+FKey now has much greater functionality.  FKey used to let you assign
+strings to function keys.  The new improved 2.1 FKey lets you assign any
+of 8 commands to any key sequence you can enter.  The "Defined Keys"
+scrolling list shows all currently defined key sequences.  The "New Key"
+and "Delete Key" gadgets lets you add and remove key sequences. 
+  
+   
+The "Command" cycle gadget lets you pick a command for the current key
+sequence.  The possible commands are:
+
+· Cycle Windows
+
+This does the same thing as the IHelp CYCLE function. 
+
+· Cycle Screens
+
+This does the same thing as the IHelp CYCLESCREEN function.
+
+· Enlarge Window
+
+This does the same thing as the IHelp MAKEBIG function.
+
+· Shrink Window
+
+This does the same thing as the IHelp MAKESMALL function.
+
+· Toggle Window
+
+This does the same thing as the IHelp ZIPWINDOW function, except it Size
+also works on windows that only have a zip gadget and don't have sizing
+gadgets. 
+
+· Insert Text
+
+Whenever the key sequence is entered the specified string will be inserted
+instead.  The string to insert is specified in the "Command Parameters"
+gadget. 
+
+· Run Program
+
+This lets you run a program by hitting any key sequence.  The program name
+and its arguments are specified in the "Command Parameters" gadget. 
+
+· Run ARexx
+
+This lets you run an ARexx script by hitting any key sequence.  The Script
+script name and its arguments are specified in the "Command Parameters"
+gadget.  Putting quotes around the script name makes it into an ARexx
+string file. 
+     
+The "Command Parameters" text gadget lets you specify arguments for three
+of the commands.  For example, if you wish "alt f1" to start DPaint:
+
+	Add a new key sequence by selecting the "New Key" gadget.  
+	Enter the key sequence in the string gadget as "alt f1".  
+	Select the "Run Program" option in the Command cycle gadget.  
+	Enter "DPaint" in the "Command Parameters" string gadget.
+
+Given this new functionality, IHelp is now obsolete.     
+
+The "Project/Save Defined Keys" menu option causes the currently defined
+sequences to be saved in the FKey program icon.  The format for the Tool
+Types thus produced are for example:
+
+		<<alt f1>> RUN DPaint
+
+where << and >> delimit the key sequence, "RUN" is the command to perform,
+and "DPaint" is the argument to the command. 
+     
+FKey now uses ReadArgs() to parse command-line options. Template is:
+
+			CX_PRIORITY/N/K,CX_POPKEY/K,CX_POPUP/K
+
+As with the other Commodities programs, FKey is now localized.
+
+
+Extras2.1:Tools/Commodities/NoCapsLock
+--------------------------------------
+Messages are now localized and NoCapsLock now uses ReadArgs() to parse
+command-line options.  The template is:
+
+			CX_PRIORITY/N/K
+
+Extras2.1:Tools/IconEdit
+------------------------ 
+IconEdit is now localized. 
+
+
+Extras2.1:Tools/ShowConfig
+--------------------------
+Combined Config and ShowConfig for 68040 awareness and, hopefully, clean
+non-identication of unknown chip revisions.  Also added checks for Zorro
+III extended size boards for revision numbers of chips. 
+
+
+
+Install 2.1  
+===========
+The Install disk has been reorganized for the 2.1 release of the Amiga OS.
+The biggest difference is the new support for localization of the system.
+There are now Install, Install Language and Install Printer programs with
+each one available in the ten languages supported by the locale.library.
+There are also new tools for the set up of hard disk drives. 
+
+Install2.1:HDSetup/#?
+---------------------
+Easy to use hard disk set up program.  This is designed for novice users.
+Has localized messages and handles partitioning of devices with unit 0. 
+
+
+Install2.1:Install 2.1/#?
+-------------------------
+Easy to use program for installing the whole 2.1 operating system. 
+
+
+Install2.1:Install Languages/#?
+-------------------------------          
+Easy to use program for selecting the language the system will use.  This
+copies the appropriate catalog files to Workbench for use by the
+locale.library. 
+
+Install2.1:Install Printer/#?
+-----------------------------          
+Easy to use program for adding a printer driver to the list of available
+printers in Printer Preferences.  This copies the selected printer driver
+to the DEVS:printers drawer. 
+
+
+
+
+
+
+Locale 2.1
+==========
+
+This is a new part of the Workbench disk set which contains the data
+needed to support international localization.  The following languages
+are supported:
+
+		· English		· Spanish          
+		· German		· Portugese          
+		· French		· Swedish          
+		· Italian		· Norwegian          
+		· Danish		· Dutch
+
+
+Locale2.1:Locale/Catalogs/#?
+----------------------------
+Locale language catalogs.  Catalog files contain the text of a localized
+application in a series of different languages.  That is, all the strings
+for a given application are stored in a catalog file.  There is one
+catalog file for each language the application supports.  These files are
+managed by locale.library
+
+Locale2.1:Locale/Countries/#?
+----------------------------- 
+Locale country information files.  Used by the Locale Preferences editor. 
+
+
+Locale2.1:Locale/Languages/#?
+-----------------------------
+Locale language drivers.  There is one language driver for every language
+supported in the system.  These are managed by locale.library and the
+Locale Preferences editor. 
+

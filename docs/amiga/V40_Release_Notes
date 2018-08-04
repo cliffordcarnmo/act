@@ -1,0 +1,1350 @@
+
+			V40 Kickstart Release Notes
+
+   ************************************************************************
+   *									  *
+   *				COPYRIGHTS				  *
+   *									  *
+   *		   UNLESS OTHERWISE NOTED, ALL FILES ARE		  *
+   *									  *
+   *  Copyright (c) 1985-1993 Commodore-Amiga, Inc.  All Rights Reserved  *
+   *									  *
+   ************************************************************************
+
+
+   ************************************************************************
+   *									  *
+   *	    		COPYRIGHTED DEVELOPER MATERIALS		  	  *
+   *									  *
+   ************************************************************************
+
+   THIS SOFTWARE AND INFORMATION IS COPYRIGHTED.
+
+   THIS SOFTWARE AND INFORMATION MAY NOT BE REDISTRIBUTED, DISCLOSED,
+   OR DUPLICATED, IN WHOLE OR IN PART, IN ANY MANNER OTHER THAN AS
+   SPECIFIED IN A SIGNED AGREEMENT WITH COMMODORE.
+ 
+   ************************************************************************
+   *									  *
+   *				DISCLAIMER				  *
+   *									  *
+   *   THIS SOFTWARE AND INFORMATION IS PROVIDED "AS IS".		  *
+   *   NO REPRESENTATIONS OR WARRANTIES ARE MADE WITH RESPECT TO THE	  *
+   *   ACCURACY, RELIABILITY, PERFORMANCE, CURRENTNESS, OR OPERATION	  *
+   *   OF THIS SOFTWARE AND INFORMATION, AND ALL USE IS AT YOUR OWN RISK. *
+   *   NEITHER COMMODORE NOR THE AUTHORS ASSUME ANY RESPONSIBILITY OR	  *
+   *   LIABILITY WHATSOEVER WITH RESPECT TO YOUR USE OF THIS SOFTWARE	  *
+   *   AND INFORMATION.							  *
+   *									  *
+   ************************************************************************
+
+
+
+			    AMIGA KICKSTART V40.65
+
+
+A3000:
+
+Building kickstart 40.65 from BuildList <A3000> : 03-Nov-93 17:00:56
+
+            exec 40.10   @ $F80000-$F837D8 Size:  14296  (15.7.93)
+          layers 40.1    @ $F837D8-$F8698C Size:  12724  (15.2.93)
+          keymap 40.4    @ $F8698C-$F8760C Size:   3200  (12.3.93)
+         mathffp 40.1    @ $F8760C-$F87AA8 Size:   1180  (16.3.93)
+        scsidisk 40.8    @ $F87AA8-$F8A79C Size:  11508  (3.11.93)
+           audio 37.10   @ $F8A79C-$F8B83C Size:   4256  (26.4.91)
+       battclock 39.3    @ $F8B83C-$F8C1A8 Size:   2412  (20.4.92)
+         battmem 39.2    @ $F8C1A8-$F8C38C Size:    484  (6.3.92)
+        rawinput 40.1    @ $F8C38C-$F8D9C0 Size:   5684  (8.3.93)
+           wbtag 39.1    @ $F8D9C0-$F8DA84 Size:    196  (20.4.92)
+     con-handler 40.2    @ $F8DA84-$F90248 Size:  10180  (12.5.93)
+         console 40.2    @ $F90248-$F93ECC Size:  15492  (5.3.93)
+            misc 37.1    @ $F93ECC-$F93F7C Size:    176  (8.1.91)
+             dos 40.3    @ $F93F7C-$F9DB88 Size:  39948  (1.4.93)
+           bonus 40.1    @ $F9DB88-$F9DC88 Size:    256  (15.2.93)
+              fs 40.1    @ $F9DC88-$FA3C28 Size:  24480  (15.2.93)
+        graphics 40.24   @ $FA3C28-$FBCCB4 Size: 102540  (18.5.93)
+            icon 40.1    @ $FBCCB4-$FBF0E4 Size:   9264  (15.2.93)
+           strap 40.1    @ $FBF0E4-$FBFFFC Size:   3864  (8.3.93)
+   Kickety-Split ------- @ $FC0000-$FC0008 Size:     12 bytes skipped
+         utility 40.1    @ $FBFFFC-$FC09C4 Size:   2504  (10.2.93)
+      filesysres 40.1    @ $FC09C4-$FC0B64 Size:    416  (15.2.93)
+ mathieeesingbas 40.4    @ $FC0B64-$FC0E50 Size:    748  (16.3.93)
+           potgo 37.4    @ $FC0E50-$FC0F88 Size:    312  (28.1.91)
+             ram 39.4    @ $FC0F88-$FC3400 Size:   9336  (9.8.92)
+            disk 37.2    @ $FC3400-$FC3748 Size:    840  (21.4.91)
+          ramlib 40.2    @ $FC3748-$FC3B6C Size:   1060  (5.3.93)
+        bootmenu 40.5    @ $FC3B6C-$FC517C Size:   5648  (17.3.93)
+           shell 40.2    @ $FC517C-$FC965C Size:  17632  (4.3.93)
+           timer 39.4    @ $FC965C-$FCA448 Size:   3564  (29.7.92)
+       expansion 40.2    @ $FCA448-$FCAFEC Size:   2980  (9.3.93)
+       trackdisk 40.1    @ $FCAFEC-$FCCCF4 Size:   7432  (12.3.93)
+        ramdrive 39.35   @ $FCCCF4-$FCD2E8 Size:   1524  (21.5.92)
+       intuition 40.85   @ $FCD2E8-$FE6C88 Size: 104864  (5.5.93)
+        gadtools 40.4    @ $FE6C88-$FEC81C Size:  23444  (24.5.93)
+              wb 40.5    @ $FEC81C-$FFDC24 Size:  70664  (24.5.93)
+             cia 39.1    @ $FFDC24-$FFE014 Size:   1008  (10.3.92)
+
+Build of kickstart 40.65 completed at : 03-Nov-93 17:01:32
+
+
+A1200:
+
+Building kickstart 40.65 from BuildList <A1200> : 03-Nov-93 17:05:12
+
+            exec 40.10   @ $F80000-$F837B8 Size:  14264  (15.7.93)
+       expansion 40.2    @ $F837B8-$F84290 Size:   2776  (9.3.93)
+ mathieeesingbas 40.4    @ $F84290-$F85134 Size:   3748  (16.3.93)
+  graphics_aa_nt 40.24   @ $F85134-$F9E5B8 Size: 103556  (18.5.93)
+             dos 40.3    @ $F9E5B8-$FA81C4 Size:  39948  (1.4.93)
+              fs 40.1    @ $FA81C4-$FAE164 Size:  24480  (15.2.93)
+         console 40.2    @ $FAE164-$FB1DE8 Size:  15492  (5.3.93)
+          layers 40.1    @ $FB1DE8-$FB4F9C Size:  12724  (15.2.93)
+            a300 40.8    @ $FB4F9C-$FB792C Size:  10640  (3.11.93)
+     con-handler 40.2    @ $FB792C-$FBA0F0 Size:  10180  (12.5.93)
+        bootmenu 40.5    @ $FBA0F0-$FBB700 Size:   5648  (17.3.93)
+           audio 37.10   @ $FBB700-$FBC7A0 Size:   4256  (26.4.91)
+         cardres 40.4    @ $FBC7A0-$FBD384 Size:   3044  (4.5.93)
+         utility 40.1    @ $FBD384-$FBDD40 Size:   2492  (10.2.93)
+       battclock 39.3    @ $FBDD40-$FBE6AC Size:   2412  (20.4.92)
+        carddisk 40.1    @ $FBE6AC-$FBEFDC Size:   2352  (12.2.93)
+            disk 37.2    @ $FBEFDC-$FBF324 Size:    840  (21.4.91)
+         mathffp 40.1    @ $FBF324-$FBF7C0 Size:   1180  (16.3.93)
+             cia 39.1    @ $FBF7C0-$FBFBB0 Size:   1008  (10.3.92)
+           wbtag 39.1    @ $FBFBB0-$FBFC74 Size:    196  (20.4.92)
+           potgo 37.4    @ $FBFC74-$FBFDAC Size:    312  (28.1.91)
+            misc 37.1    @ $FBFDAC-$FBFE5C Size:    176  (8.1.91)
+      filesysres 40.1    @ $FBFE5C-$FBFFFC Size:    416  (15.2.93)
+   Kickety-Split ------- @ $FC0000-$FC0008 Size:     12 bytes skipped
+          ramlib 40.2    @ $FBFFFC-$FC042C Size:   1072  (5.3.93)
+        ramdrive 39.35   @ $FC042C-$FC0A20 Size:   1524  (21.5.92)
+           strap 40.1    @ $FC0A20-$FC1938 Size:   3864  (8.3.93)
+           timer 39.4    @ $FC1938-$FC2724 Size:   3564  (29.7.92)
+          keymap 40.4    @ $FC2724-$FC33A4 Size:   3200  (12.3.93)
+        rawinput 40.1    @ $FC33A4-$FC49D8 Size:   5684  (8.3.93)
+       trackdisk 40.1    @ $FC49D8-$FC66E0 Size:   7432  (12.3.93)
+            icon 40.1    @ $FC66E0-$FC8B10 Size:   9264  (15.2.93)
+             ram 39.4    @ $FC8B10-$FCAF88 Size:   9336  (9.8.92)
+           shell 40.2    @ $FCAF88-$FCF468 Size:  17632  (4.3.93)
+       intuition 40.85   @ $FCF468-$FE8E08 Size: 104864  (5.5.93)
+        gadtools 40.4    @ $FE8E08-$FEE99C Size:  23444  (24.5.93)
+              wb 40.5    @ $FEE99C-$FFFDA4 Size:  70664  (24.5.93)
+         battmem 39.2    @ $FFFDA4-$FFFF88 Size:    484  (6.3.92)
+
+Build of kickstart 40.65 completed at : 03-Nov-93 17:05:50
+
+
+A4000:
+
+Building kickstart 40.65 from BuildList <A4000> : 03-Nov-93 17:06:28
+
+            exec 40.10   @ $F80000-$F837C0 Size:  14272  (15.7.93)
+          layers 40.1    @ $F837C0-$F86974 Size:  12724  (15.2.93)
+             cia 39.1    @ $F86974-$F86D64 Size:   1008  (10.3.92)
+           strap 40.1    @ $F86D64-$F87C7C Size:   3864  (8.3.93)
+           a1000 40.8    @ $F87C7C-$F8A5E8 Size:  10604  (3.11.93)
+        bootmenu 40.5    @ $F8A5E8-$F8BBF8 Size:   5648  (17.3.93)
+       battclock 39.3    @ $F8BBF8-$F8C564 Size:   2412  (20.4.92)
+        ramdrive 39.35   @ $F8C564-$F8CB58 Size:   1524  (21.5.92)
+        rawinput 40.1    @ $F8CB58-$F8E18C Size:   5684  (8.3.93)
+            disk 37.2    @ $F8E18C-$F8E4D4 Size:    840  (21.4.91)
+     con-handler 40.2    @ $F8E4D4-$F90C98 Size:  10180  (12.5.93)
+         console 40.2    @ $F90C98-$F9491C Size:  15492  (5.3.93)
+           potgo 37.4    @ $F9491C-$F94A54 Size:    312  (28.1.91)
+             dos 40.3    @ $F94A54-$F9E660 Size:  39948  (1.4.93)
+           bonus 40.1    @ $F9E660-$F9E760 Size:    256  (15.2.93)
+              fs 40.1    @ $F9E760-$FA4700 Size:  24480  (15.2.93)
+  graphics_aa_nt 40.24   @ $FA4700-$FBDB84 Size: 103556  (18.5.93)
+             ram 39.4    @ $FBDB84-$FBFFFC Size:   9336  (9.8.92)
+   Kickety-Split ------- @ $FC0000-$FC0008 Size:     12 bytes skipped
+           timer 39.4    @ $FBFFFC-$FC0DF4 Size:   3576  (29.7.92)
+           audio 37.10   @ $FC0DF4-$FC1E94 Size:   4256  (26.4.91)
+      filesysres 40.1    @ $FC1E94-$FC2034 Size:    416  (15.2.93)
+           wbtag 39.1    @ $FC2034-$FC20F8 Size:    196  (20.4.92)
+         mathffp 40.1    @ $FC20F8-$FC2594 Size:   1180  (16.3.93)
+            icon 40.1    @ $FC2594-$FC49C4 Size:   9264  (15.2.93)
+          ramlib 40.2    @ $FC49C4-$FC4DE8 Size:   1060  (5.3.93)
+            misc 37.1    @ $FC4DE8-$FC4E98 Size:    176  (8.1.91)
+ mathieeesingbas 40.4    @ $FC4E98-$FC5D3C Size:   3748  (16.3.93)
+           shell 40.2    @ $FC5D3C-$FCA21C Size:  17632  (4.3.93)
+          keymap 40.4    @ $FCA21C-$FCAE9C Size:   3200  (12.3.93)
+       expansion 40.2    @ $FCAE9C-$FCB9CC Size:   2864  (9.3.93)
+       trackdisk 40.1    @ $FCB9CC-$FCD6D4 Size:   7432  (12.3.93)
+         utility 40.1    @ $FCD6D4-$FCE090 Size:   2492  (10.2.93)
+       intuition 40.85   @ $FCE090-$FE7A30 Size: 104864  (5.5.93)
+        gadtools 40.4    @ $FE7A30-$FED5C4 Size:  23444  (24.5.93)
+              wb 40.5    @ $FED5C4-$FFE9CC Size:  70664  (24.5.93)
+         battmem 39.2    @ $FFE9CC-$FFEBB0 Size:    484  (6.3.92)
+
+Build of kickstart 40.65 completed at : 03-Nov-93 17:07:03
+
+
+The following notes pertain to differences between Kickstarts 39.106
+(Release 3.0) and 40.65 (Release 3.1):
+
+These notes do not include the change notes for the CD32 modules cd.device,
+lowlevel.library, or nonvolatile.library since these are new subsystems.
+See the autodocs for these new subsystems for more information.
+Lowlevel.library and nonvolatile.library are expected to be provided
+in disk-loadable library on Workbench 3.1.
+
+Changed:
+
+	bonus 40.1
+	bootmenu 40.5
+	carddisk.device 40.1
+	cardres 40.3
+	console.device 40.2
+	con-handler 40.2
+	dos 40.3
+	exec 40.10
+	expansion 40.2
+	filesysres 40.1
+	fs/ffs 40.1
+	gadtools 40.4
+	graphics 40.24
+	icon 40.1
+	intuition 40.85
+	keymap	40.4
+	layers 40.1
+	mathffp 40.1
+	mathieeesingbas 40.4
+	ramlib 40.2
+	rawinput 40.1
+	scsidisk 40.8
+	shell 40.2
+	strap 40.1
+	trackdisk 40.1
+	utility 40.1
+	wb 40.5
+
+
+Details follow:
+
+
+bonus V40.1 
+
+    - Bumped version to V40.  (40.1)
+
+
+bootmenu 40.5
+
+    -	Fixed bug where the chip type mutual exclude gadget was being
+	displayed even on pre-ECS machines.  (39.20)
+
+    -	Bumped version to V40.  (40.2)
+
+    -	When it brings up the "Expansion Board Diagnostic" screen as a result
+	of a bad board in the system, it now reboots the system when the user
+	clicks Continue. Added ROM-tag handling to prevent reentering the
+	same 	screen after the reboot is done.  (40.2)
+
+    -	Miscellaneous fixes.  (40.4)
+
+    -	Removed clean-up code used right before BootMenu reboots the
+	system.  (40.5)
+
+
+carddisk 40.1
+
+    -	Now uses TaggedOpenLibrary (saves some ROM)  (39.1)
+
+    -	Remove dead code for raw i/o (also saves some ROM)  (39.1)
+
+    -	Flush cache during data writes in anticipation of 040 copyback
+	cache on A1200 (no hardware support for PCMCIA memory space data
+	cache control provided, so the data cache is still potentially
+	a problem when programming flash rom; means turning off the
+	data cache globally for 030/040 A1200's to support 6-10us
+	write/verify timing).  (39.1)
+
+    -	Bumped version to V40.  (40.1)
+
+
+cardres 40.3
+
+    -	Now leaves PCMCIA slot disabled if any RAM is configured at $600000;
+	this allows use of >4Megs of 24bit RAM on the A1200 at the expense of
+	being unable to use the PCMCIA slot.  (39.1)
+
+    -	Partial work around for a hardware bug in our PCMCIA implementation
+	which presents 2Meg+ addresses everytime we access ATTRIBUTE memory.
+	This causes a problem when a >2Meg card which ignores REG is used
+	(and a potential problem with any card which tries to decode the
+	entire address when REG is set).  The former problem is kludged
+	around by trying to sniff out mirroring of 4 bytes at $A00000 and
+	$800000 but not mirrored at $600000.  (39.1):
+
+    -	Considerably faster memory sizing for SRAM/DRAM cards (does test of
+	every 256 words/long-words).  (39.1):
+
+    -	BVD1/SC, BVD2/DA, and BSY/IRQ status change interrupts can now be
+	individually enabled/disabled.  WR (Write-Protect) status change
+	interrupts are always enabled (rare), and there is no change in the
+	defaults.  This is intended for future use if needed (e.g., Flash-ROM
+	which expects software to poll SC during programming; better
+	performance can be obtained if interrupts are not generated).  If
+	needed on the A600, this can be implemented as documented work
+	around, or SeFunction() of CardMiscControl().  No expected change
+	for existing software; defaults are the same as they use to be in
+	V37 card.resource. Spurious interrupts (change true, but interrupt
+	disabled) are cleared by the resource software, and hidden from the
+	status change callback hook.  (39.1)
+
+    -	Secondary callback option for status change interrupts; allows
+	high-performance hardware to be serviced via interrupts only (instead
+	of Signal()ing a task).  (39.1)
+  
+	If needed on the A600, this can be implemented as a documented work 
+      	around.  To expected change for existing software; default behavior 
+	is the same, and the bit used to enable the secondary status change 
+        callback has been documented as MUST BE SET TO 0 (and the only known
+        device driver is carddisk.device, which does the right thing).
+
+    -	Flush Cache when ReleaseCard() is called.  A flush before full release
+	ensures that no more writes will occur once the caller returns from
+	ReleaseCard(). This is to support the 040 copyback cache when/if an
+	040 becomes available for the A1200.  Would prefer control over the
+	data cache for PCMCIA space independent of the first 4MEG of 24bit
+	Fast RAM, but we don't have this feature.  Lack of Data Cache control
+	for PCMCIA space is still potentially problematic for use of FlashROM
+	programming which requires disabling the DATA cache for 030/040
+	equipped A1200's so that fast (6-10us) write/read operations can be
+	performed during programming.  Disabling the DATA cache during
+	FlashROM writes means disabling globally.  (39.1)
+
+    -	Bumped version to V40.  (40.2)
+
+    -	Miscellaneous fixes.  (40.3)
+
+
+console 40.2 
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Miscellaneous fixes.  (40.2)
+
+
+con-handler 40.2
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Miscellaneous fixes.  (40.1)
+
+    -	Fixes any possible remaining hole where a ^C could be sent to a
+	non-existant process, and removes any chance of an Enforcer hit
+	while trying to decide if the process still exists.
+
+	Note that this searches the exec task lists under Disable(), so on
+	a heavily-loaded (with tasks) system this might affect MIDI.
+	(40.2)
+
+
+dos 40.3
+
+    -	GetDeviceProc() now returns errors better (especially
+	ERROR_NO_MORE_ENTRIES).  It used to lose error codes by calling
+	UnLock().  (39.25)
+
+    -	Fixed bug in RemAssignList(): it wouldn't remove the first lock in
+	the assign.  (39.26)
+
+    -	AttemptLockDosList() was returning NULL or 1 for failure instead of
+	NULL.  (39.26)
+
+    -	Made RunCommand() free any memory added to the tc_MemEntryList by
+	the command.  tc_MemEntryList is now saved and emptied before calling
+	the command, and restored after any added memory is freed.  (39.26)
+
+    -	Fixed exall emulation to not lose 1 file each time the list is broken
+	up into multiple ExAll() calls.  (39.26)
+
+    -	Removed broken attempted fix for rda_Buffer.  Autodocs now reflect
+	that you must restore rda_Buffer before each call to ReadArgs() if
+	you pass in an RDArgs structure.  Now always clears rda_Buffer in
+	FreeArgs().  (39.26)
+
+    -	SetVBuf() re-enabled.  (39.26)
+
+    -	Changed some prototypes to avoid C++ reserved word "template".
+	Changed VPrintf()/VFPrintf() prototypes to VOID * from LONG * to
+	reduce useless compiler warnings/casts.  (39.26)
+
+    -	SetVBuf() now updates the filehandle so it won't overwrite the buffer
+	with a smaller one if SetVBuf() is called before doing buffered IO.
+	Also it doesn't allocate anything if the new size is the same as the
+	old.  (39.26)
+
+    -	SetVar() now creates subdirectories as needed (including multiple
+	ones) if they do not exist already (in ENV: and in ENVARC: if
+	GVF_SAVE_VAR is set).  Also, it now preserves any IoErr() and won't
+	try to save to ENVARC if there is an error saving to ENV:.  (39.26)
+
+    -	Modified to fix an edge condition which existed when making the mod
+	to SetVBuf().  (39.26)
+
+    -	Close() doesn't free a SetVBuf() user-supplied buffer if the
+        user Close() the file.  Fixed.  (39.27)
+
+    -	ExAll() emulation doesn't return the directory the user is exalling.
+	Fixed.  (39.27)
+    
+    -	Bumped version to V40.  (40.1)
+
+    -	Fixes Enforcer hit on ExNext with NULL lock.  Now returns
+	INVALID_LOCK error.  (40.3)
+
+    -	Fixes bad packet on ExAllEnd.  (40.3)
+			
+
+exec 40.10
+
+    -	Now added the full support for the Zorro-III quick interrupts.
+	The new LVO (in an old slot) ObtainQuickVector() is used to allocate
+	the vector.  There is no deallocation since this is basically
+	a configuration issue and not a dynamic thing.  (39.50)
+
+    -	On machines with PCMCIA cards, EXEC now makes sure the interface
+	is turned on at boot time and then will turn it off before
+	configuration.  This should let a full 8-meg of RAM be added in the
+	Zorro-II space.
+
+	This change requires an update to the credit card resource/device
+	such that it will correctly turn on the interface if needed.  (39.50)
+
+    -	The Quick Interrupt vectors that have not yet been added used to
+	be -1.  Now they point at an Alert that is the new Unexpected
+	Quick Interrupt.  (39.50)
+
+      -	Updated the ObtainQuickVector() autodocs to reflect that the
+	V37.175 ROMs do not have a blank vector at the end of EXEC. (39.52)  
+
+      -	Changed the copyright information to show 1993.  This will
+	thus automatically fix everyone else :-)  (39.55)
+
+    -	Bumped version to V40.  (40.0)
+
+    -	Just changed to V40 so that the Version commands will work right.
+	(40.0)
+
+    -	Removed the last of the old Procure/Vacate code.  (40.2)
+
+    -	The SAD documentation was changed to reflect the real command numbers 
+	(rather than what was planned). (40.3)
+
+    -	Fixed SAD commands from SAD V39 (write byte was broken and the docs
+	were a bit wrong as to the command format...)  (40.6)
+      
+    -	Miscellaneous housekeeping changes.  (40.7)
+
+    -	Miscellaneous housekeeping changes.  (40.9)
+
+    -	Disabled quick interrupts.  This avoids the problem with the A4091
+	and quick interrupts.  V39 exec didn't have quick interrupts enabled,
+	only beta V40's.  (40.10)
+
+
+expansion 40.2
+
+    -	New - A1200 specific build that can detect CPU Slot RAM ($08000000)
+	if you have a 32-bit addressing CPU installed.  The CPU slot area
+	is 128meg in size (just like the A3000) but has the addition of
+	a wrap check at each 1meg of space in the CPU address space to make
+	low-cost RAM expansion possible without jumpers.  (It is now possible
+	to get 128Meg SIMMs so a single SIMM on a CPU card could make a
+	128Meg of FAST RAM system )
+
+	The reason that this has to be A1200 specific (at least for now)
+	is that the behavior of the existing A500/A2000 CPU cards with
+	respect to 32-bit addresses is very undefined.  They act very
+	strangely and differently making it very difficult to safely figure
+	out if these cards are operating correctly or not.
+
+	No code changes for anything but the new A1200 version of the
+	library.  (39.8)
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Two major bugs found in the A3000 memory test/CPU Card test.
+	Both were fixed.  (40.1)
+
+    -	CPU Card space is now able to be more than 128Meg.  (We can grab
+	3 * 256Meg more since we don't start Zorro-III until $40000000
+	anyway...)  (40.1)
+
+    -	CPU Card space test now also does mirror testing.  (40.1)
+
+    -	Due to the fixes, some forms of the code have gotten a bit smaller,
+	specifically, the A3000, A4000, and A1200 versions.  (40.1)
+
+    -	Reworked the memory test to deal with extra-high capacitance
+	bus systems.  (40.2)
+
+
+filesysres 40.1
+
+    -	Now matches the FS version change.  (39.3)
+
+    -	Bumped version to V40, picks up filesystem version.  (40.1)
+
+
+fs 40.1
+
+    -	Fixed deletion of the destination of a hardlink - this was badly
+	broken in all versions of the FS, DCFS just made it easier to hit.
+	This was causing spurious "Checksum Error on Block 0" errors (and
+	potentially others), especially when UUCP was using a DCFS partition.
+	(39.29)
+
+    -	Fixed a returncode which would make softlinks not work if a softlink
+	to a directory is in the middle of a path.  (39.30)
+
+    -	Fixed the buffer overrun on ExAll with ED_COMMENT if the first
+	character was >$80 (and lost the first character of comments).
+	(39.30)
+
+    -	Fixed updating the date of a directory that changes in the parent
+	of that directory's dircache.  (39.30)
+
+    -	There were old offsetting bugs in the exall filename/comment copying
+	code.  When I fixed the code not to copy too many bytes, the clear was
+	being done to the wrong byte. (39.30)
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Fix to deletion of destination of a hardlink - an offset into the
+	stack was wrong.  (40.1)
+
+    -	Directory notification re-enabled.  (40.1)
+
+    -	Support for SectorsPerBlock added.  (40.1)
+
+
+gadtools 40.4
+
+    -	Fixed bugs in clipping code in TEXT_KIND and NUMBER_KIND gadgets. The
+	clipping didn't work correctly on right and center justified text, and
+	was under-evaluating the number of pixels available for the text in a
+	gadget that didn't have borders.  (39.359)
+
+    -	Fixed bug in the calculation of the default value for the
+	GTSL_MaxPixelLen tag. This caused odd clipping of the number display
+	for sliders whenever the title of the gadget wasn't on the same side
+	of the slider as the display of its current value.  (39.359)
+
+    -	Fixed GTJ_CENTER option for the various GTXX_Justification tags. The
+	way centering was done could cause certain characters to get lost.
+	(39.360)
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Fixed bug where TEXT_KIND and NUMBER_KIND gadgets wouldn't render
+	correctly if the text was center or right justified, and GTTX_Clipped
+	or GTTX_Border were not used.  (40.1)
+
+    -	Fixed bug where the selected item and the scroll bar would not get
+	updated correctly when going from a list with items, to a ~0 list,
+	and finally to an empty list. When switching to the empty list, the
+	two components would remain unchanged.  (40.2)
+
+    -	Fixed activation/deactivation problem with the arrows on scroller
+	gadgets.  Except for the initial creation of a scroller gadget,
+	the GA_Disabled tag was being ignored.  (40.3)
+
+    -	Unused items in a listview are now rendered using BACKGROUNDPEN
+	instead of being rendered with the window's backfill hook (via
+	EraseRect()). This is more appropriate.  (40.4)
+
+
+graphics 40.24
+
+    -	Fixed some problems with narrow ViewPorts. All work well now in AA
+	and ECS machines. Narrow ViewPorts on 'A' machines (and emulated 'A')
+	still broken in Hires modes.  (39.97)
+
+    -	These fixes also fixed the problem with ViewPorts narrower than the
+	DClips losing pixels on the RHS under ECS (reported a gazillion times
+	on BIX with the palette requester screen).  (39.97)
+
+    -	LoadView() was not calling the MonitorSpec->KillView() vector with the
+	MonitorSpec in a0, as documented. The only monitor using a KillView()
+	so far is the A2024 driver, and that didn't use the MonitorSpec
+	parameter anyway, so there is no impact in fixing this.  (39.97)
+
+    -	A minor change made to BestModeIDA() - better weighing of ModeIDs with
+	similar aspect ratios. So, if BestModeIDA() is passed a NominalWidth
+	and Height of 322x200, the result will be LORES non-laced instead of
+	HIRES LACE, which is the same aspect ratio as LORES non-laced, but
+	the LORES is a better fit.  (39.97)
+
+    -	CoerceMode() now ignores the AVOID_FLICKER option if the ViewPort
+	being coerced is interlaced.  (39.97)
+
+    -	Changed the default value of the ViewExtra->TopLine from 0 to a
+	constant TOPLINE.  (39.97)
+
+    -	Fixed sprite bug on ECS machines. If the view was at the maximum
+	vertical overscan, the sprite pointer would disappear or screw up on
+	the top line of a programmable mode. Fixed MoveSprite to take account
+	of the difference in the vertical counter between ECS and AA.  (39.97)
+
+    -	LoadRGB4 with 0 colors now does nothing.  (39.97)
+
+    -	ScrollVPort should now not mess up the bitplane pointers for a
+	HAM8 screen.  (39.97)
+
+    -	When blitting from an interleaved source to an interleaved destination
+	using BltBitMaskRastPort, the mask data would be interpreted as
+	interleaved.  Work-around for versions of graphics library older than
+	this one is to copy the source bitmap, and zero its pad field before
+	blitting.  (39.97)
+
+    -	Fix for bltbitmap trashing low byte of d7 when interleaved.  (39.97)
+
+    -	ScrollVPort, and ChanegVPBitMap HAM8 fix incorporated.  (39.97)
+
+    -	Change to BuildVP which allows one extra line of vertical overscan
+	in programmable modes.  (39.97)
+
+    -	Added vertical blank counter in GfxBase for Intuition use.  (39.97)
+
+    -	Fixed potential Enforcer hit when sprite size is changed while
+	the active view is nil.  (39.97)
+
+    -	Huge clean-up of the GfxAssociate()/GfxLookUp()/GfxFree() code. This
+	code had two problems:
+    
+	1) There was no locking around the hash table! This was fixed with a
+	   new semphore in GfxBase.
+
+     	2) The hash table was meant to handle hash collisions by chaining 
+           entries.  The code never actually did this. All it would do was 
+           place the entry in the next available slot. This meant that there 
+           could only be n entries in the hash table (where n = 256 from 2.01 
+           to 2.03, or n = 8 from 2.04 until now). Now fixed by correctly 
+           chaining hash collisions. (39.98)
+
+    -	ViewPorts whose top edge was completely off the bottom of the display
+	would have one line of garbage on the last visible line. This was
+	because the clipping code clipped the bottom of the ViewPort to the
+	bottom of the monitor, but the top of the Viewport was only clipped to
+	the top of the monitor. This resulted in a display window whose bottom
+	edge was higher than its top edge, although this display window was
+	still outside of the displayable region. Now, if this condition is
+	found, MakeVPort() will not generate any intermediate copper
+	instructions (because they should never be executed), frees the
+	vp->DspIns intermediate copper list,  and sets vp->DspIns to NULL.
+	When MrgCop() finds a NULL vp->DspIns, it will ignore the whole
+	ViewPort, just as it does if the VP_HIDE bit is set. This is so that
+	Spr/Clr/UCopIns instructions which are still around will not be
+	merged with the other ViewPorts. This may be (though is unlikely) a
+	compatibility problem, with anyone expecting their UserCopperlists to
+	be merged with the rest of the system, irrespective of their
+	ViewPort's position.  (39.100)
+
+    -	Minor autodoc change in AllocBitMap.  (39.100)
+
+    -	Fixed newly introduced bug in ScrollVPort which would word-swap the
+	plane pointers in one case.  (39.100)
+
+    -	Fix for TextFit Y clipping in. There may still be a bug in the x
+	direction with proportional fonts, this is still being looked at.
+	(39.100)
+
+    -	ChangeVPBitMap will now no longer hang with video overscan hires-lace.
+	It will also now not flash on a double-ntsc 320x200 screen which is
+	dragged down.  (39.100)
+
+    -	The code in MakeVP() that detects the number of sprites requested and
+	tries to drop the bandwidth to fit was unecessarily checking if the
+	difference between the current DDFSTRT and the required DDFSTRT was
+	less than 8. This meant that a Hires screen at MaxOScan with sprite
+	#1 would not drop the bandwidth (and sprite 1 would not be visible),
+	but if sprite #2 was used it would drop the bandwidth to accomodate,
+	and sprite 2 would be visible.  (39.100)
+
+    -	Found another case in the DblPAL monitor where positioning two
+	viewports on 256-line boundaries, MrgCop() would build a bad
+	copperlist. This code was all in the get_hwait_hack() function, and
+	it turned out to be easier to redesign the code that actually
+	calculates the X position on line 255 than to hack in another cusp
+	case.  Hopefully, all of the possible cases have been trapped,
+	including multiple consecutive WAIT(0xff, xxx) instructions for
+	monitors with more than 512 lines per frame (namely, DblPAL and
+	Motivator). Testing will tell! If there is a bug in this code, it
+	will have more chance of being seen in PAL modes.  (39.100)
+
+    -	If the user viewport has a ViewPortExtra attached, ScrollVPort will
+	now cache copper-list addresses in it. This can make a major
+	difference in performance, particularly on a 256-color screen.
+	MrgCop invalidates this cache.  (39.102)
+
+    -	VideoControl() now supports a new tag, VC_IntermediateCLUpdate.
+	When this is set to false, ScrollVPort will not affect the 
+	intermediate copper-lists for a viewport, thus gaining speed.
+	This requires a small bit of Intuition support to be safe in
+	a screen. SetRGBxxx and ChangeVPBitMap will soon also pay
+	attention to this bit. This flag can be checked for by
+	VC_IntermediateCLUpdate_Query,&var. Note that this
+	tag introduces a new naming scheme for VideoControl.
+	VC_xxx tags use sane parameter returning methods, instead
+	of the brain-damaged way that VTAG_xxx tags work.  (39.102)
+
+    -	Size optimization in VideoControl. It was using ti->ti_Data
+	zillions of times. Each loop iteration now stores this in a
+	variable to save 100 million dereferences.  (39.102)
+
+    -	ChangeVPBitMap now supports VC_IntermediateCLUpdate tag for disabling
+	modification of intermediate copper lists. (40.1)
+
+    -	Fixed bug in ChangeVPBitMap when auto-scroll screens were scrolled off
+	of the top. Now clips DyOffset against the monitor's min_row. (40.1)
+
+    -	Re-wrote color copper-list poker. Now faster most of the time. It also
+	supports VC_IntermediateCLUpdate, which makes color-loading
+	significantly  faster ALL the time. Also smaller, and simpler. (40.1)
+
+    -	Code-space optimization. Library init code was using a local variable
+	to point to GfxBase most of the time, when it could simply use A6.
+	(40.1)
+
+    -	Fixed another MrgCop problem. User Copper lists which execute on 
+	line 255 could cause lower viewports to vanish. It will be a miracle
+	if this actually works without breaking anything else.  (40.1)
+
+    -	Bumped version to V40. (40.1)
+
+    -	The internal CalcFMode() was looking at the wrong register when
+	checking if BytesPerRow was correct for the required alignment. This
+	was causing some misaligned promoted screens to be skewed.  (40.1)
+
+    -	Now *safely* changes the default monitor setting. This was previously
+	unlocked, and could result in a database query returning the wrong
+	information if the default monitor was concurrently being changed.
+	(40.1)
+
+    -	Big size optimization in MakeVPort also nearly doubles its
+	performance.  (40.1)
+
+    -	Changed ChangeVPBitMap to not reply immediately to the "safe-to-write"
+	message when VP_HIDE is set. This should prevent some animations
+	from taking 100% CPU when their screen is put behind. Also fixed a
+	bug in the signalling system.  (40.1)
+
+    -	Now sets copinit->wait_forever to contain a write to bplcon3.
+	This will cause LoadView(NULL) to switch the sprite resolution
+	back to normal.  (40.1)
+
+    -	The flag "LPEN_SWAP_FRAMES" is initialized to ON for old Agnii.
+	(40.1)
+
+    -	The Genloc enable bit in copinit will now be correct as soon as
+	the genloc is detected, instead of until the first screen.  (40.1)
+
+    -	Fixed a bug in BestModeID(). If you pass BestModeID()
+	BIDTAG_MonitorID with DEFAULT_MONITOR, the result would always be
+	INVALID_ID.  (40.1)
+
+    -	BestModeID() no longer checks monitor compatibility unless passed 
+	a special flag from CoerceMode().  (40.1)
+
+    -	Added locking around promotion state changes.  (40.1)
+
+    -	Fixed a bug where, when  booting a AA machine into ECS mode, the
+	database values for Max/VideoOScan MaxX in SuperHires were wrong.
+	(40.1)
+
+    -	When LightPens are enabled, some versions of Agnus swap the Long
+	and Short frames over, some don't, and there is no ID bit software
+	can read. I have defined a new DisplayFlags bit called 
+	LPEN_SWAP_FRAMES, which is set by default. LPen s/w can then set
+	up a test to ask the user if there are visible problems, and if 
+	so, clear this flag.  (40.1)
+    
+    -	The NTSC/PAL ScanDbl modes I introduced last time had the 
+	DIPF_IS_WB bit set. This is now cleared.  (40.1)
+
+    -	VC_NoColorPaletteLoad tag for VideoControl() inhibits the loading of
+	all color registers except color 0 for the ViewPort.  (40.1)
+
+    -	When switching from lace to non-lace, it was possible Agnus/Alice to
+	be stuck in SHF mode.  Now checks that for NTSC/PAL screens, as well
+	as the programmed modes which it was checking before, but only writes
+	to vposw if the mode is SHF. Hopefully, this won't cause the display
+	problems with Amber we had last time we tried this.  (40.1)
+
+    -	Added monitorinfo->mouse_ticks for Intuition use.  (40.1)
+
+    -	Fixed copper.i to match copper.h. (40.4)
+
+    -	Autodoc fix in GetExtSprite (40.4)
+
+    -	WritePixelArray8 totally re-written to use chunkytoplanar hardware.
+	(40.4)
+
+    -	This fixed a bug report of a 4 bitplane NTSC interlaced WB in
+	front of CED on ECS machines would cause garbled displays. (40.4)
+
+    -	Found a bug in CalcIVG() that had been present since it was first
+	written.  CalcIVG() looks at CopIns->Count to count the copper
+	instructions.  However, CopIns->Count also includes those
+	instructions that are unique to Long and Short frames. In edge
+	conditions, it was possible that CalcIVG() would return a value
+	one line too large, which naturally causes MrgCop() at line 255
+	to fail. (40.4)
+
+    -	Added "non-dual-playfield dual-playfield" support, via
+	VC_DUALPF_Disable VideoControl() tag. Changed MakeVPort, 
+	VideoControl(), and create_color_bits() (40.6)
+
+    -	Fixed a bug where VC_NoColorPaletteLoad_Query would return the 
+	reverse of the current state. (40.6)
+
+    -	Fixed the V39 bug where the "Attach" bits would not be set for 
+	sprites created with the SPRITEA_Attached tag. (40.6)
+
+    -	Fixed MrgCop() bugs.  (40.12)
+
+    -	The code that calculates the STRADDLES_256 flag was not halving
+	the inter-viewport gap in interlaced screens.  Fixed.  (40.12)
+
+    -	ScrollVPort now behaves as if dual-playfield screens with no
+	rasinfo->Next are non-dual-playfield screens.  (40.12)
+
+    -	BOBs would render incorrectly to obscured smart-refresh and
+	superbitmap windows on interleaved screens.  Fixed. (40.12)
+
+    -	60/50hz clock bit fix.  (40.16)
+
+    -	Fixed MungWall hit.  (40.16)
+
+    -	Fixed screen flashing with ECS emulation on AA bug.  (40.18)
+
+    -	"GetColorMap fails under memoration" problem fixed.  (40.19)
+
+    -	Some depths of ScanDoubled beam-sync modes required an odd number of
+	lines in the inter-viewport gap, but MrgCop() always doubled the
+	WAIT position in ScanDouble displays.  Now adds 1 to the WAIT
+	position if a flag in the CopList->Flags shows that this is a "half
+	line" gap; this flag is set in CalcIVG().  (40.20)
+
+    -	Check if the CopList being merged is vp->SprIns, vp->ClrIns or
+	vp->UCopIns before checking the STRADDLES_256 flag.  (40.20)
+
+    -	Removed check for SetDefaultMonitor failing and pulling an alert
+	in graphics library init.  (40.23)
+
+    -	When changing between PAL and NTSC views (and presumably between
+	other monitor types too), occasionally the machine could freeze.
+	The cause is unknown, but our current theory is that disabling
+	RASTER DMA in the middle of a fetch cycle could be dangerous. We
+	now try to ensure that we don't disable RASTER DMA in the middle
+	of a fetch cycle. This is an improvement, although tests show this
+	to not be perfect. Brings the crash interval from a few minutes to
+	many hours of continuous screen flipping.  (40.23)
+
+    -	ScrollVPort would fail to modify the FMODE value in the intermediate
+	copper list of an interlaced screen. This is because it was looking
+	for a DIWHIGH move followed by an FMODE move. The interlaced
+	intermediate copper lists have two DIWHIGH moves, and have LF/SHF
+	bits set in the opcodes.  Fix was to AND out the LF/SHF bits and to
+	make it skip as many DIWHIGH writes as appear.
+	one AND.L #immed + 1 bra.s.  (40.24)
+
+
+icon 40.1 
+
+    -	Bumped version to V40.  (40.1)
+
+    -	No longer calls alert for the silly case.  (40.1)
+
+
+intuition 40.85
+
+    -	Menus are now brought on-screen much faster than before.  The extra
+	memory required to do this is freed immediately after the menu is
+	drawn onto the display.  If that memory isn't available, menus are
+	brought on-screen the old way.  Menus are removed from the screen
+	several times faster than before.  (39.2192)
+
+    -	The menu code has been massaged (mostly unifying item-panels and
+	subitem-panels), which saved a bunch of code.  (39.2192)
+
+    -	When a window is resized, the window drag-bar no longer flashes.
+	(39.2192)
+
+    -	If a screen is opened before DOS sends Intuition the first SetPrefs(),
+	the pointer will be the ROM default pointer, instead of being blank.
+	(39.2192)
+
+    -	If you used a boopsi string gadget as an integer gadget, with
+	Intuition supplying the buffer, and you specified a STRINGA_MaxChars
+	of > 15, you would get a mismatched FreeMem() when the gadget is
+	disposed.  This is now fixed.  (39.2192)
+
+    -	Certain OpenScreen() failures would erroneously CloseFont()
+	GfxBase->DefaultFont even though it had not been opened.  This is now
+	fixed.  (39.2192)
+
+    -	For 3.0, there were some changes to clean up autoscroll, in particular
+	to fix bugs when an absolute input device (such as a tablet) is used.
+	Mostly incidental to that change, a problem was being caused as a
+	result of inadvertently switching the autoscroll boundary to be the
+	DClip of the active screen, where it used to be the "hull" of the
+	DClips of all the screens.  If there are two screens in the system
+	with different DClips, the mouse can be way outside the DClip of the
+	smaller screen.  If that screen is active, it will AutoScroll at a
+	ridiculous rate.  For example, if the mouse is seventeen pixels below
+	its DClip, moving it down one pixel causes the screen to autoscroll
+	by eighteen, instead of one.  This is now fixed.  (39.2192)
+
+    -	Intuition now updates its internal time values based on (nearly) _any_
+	InputEvent it receives, instead of just IECLASS_TIMER ones.  The
+	problem was that outgoing IntuiMessages get their time from this
+	internal time, which meant that IntuiMessage time was the time-stamp
+	of the most recent timer tick, instead of the time-stamp of the event
+	that actually triggered this IntuiMessage.  This problem completely
+	precludes correlating an IntuiMessage with the InputEvent that caused
+	it, which is important for tablet people, for example. (39.2210)
+
+    -	If the TimeStamp of an event would be a step backwards in time or
+	farther forward than one second, Intuition doesn't heed it.  However,
+	Intuition _always_ respects IECLASS_TIMER TimeStamps, which allows
+	changes to system-time to be picked up.  (39.2339)
+
+    -	If a child screen is dragged off the bottom of the display, and the
+	scan-rate changes (say by Amiga-M changing to a screen of a different
+	scan-rate), the child screen would be accidentally brought up so one
+	scan line was visible.  This bug is now fixed.  (39.2339)
+
+    -	In frameiclass, the IM_FRAMEBOX method now accounts for the extra room
+	of the new-for-V39 frame types.  In the initial V39, frameiclass
+	ignored the new frame types when computing how much bigger the frame
+	box needed to be when compared to the contents. (39.2256)
+
+    -	After creating the BarLayer of a SCREENQUIET screen, Intuition now
+	changes its backfill hook to the screen's LayerInfo backfill hook.
+	This fixes the bug where the part of a window obscuring the title-bar
+	area of a SCREENQUIET screen wasn't erased when the window was closed.
+	(Effectively, Intuition was relying on a layers side-effect that was
+	optimized out for V39).  (39.2339)
+
+    -	Fixed the bug where changing coercion Preferences (specifically the
+	"Avoid Flicker" option) could leave a screen illegally positioned.
+	(39.2339)
+
+    -	Clarified some comments and removed a redundant test in Intuition's
+	MakeVPort() code.  Intuition is verified ready for the graphics fix
+	that prevents minor display garbage if a ViewPort is completely off
+	the bottom of the display.  (39.2339)
+
+    -	The ImageClass OM_GET method now uses UnpackStructureTags() (the
+	packing table already existed for the OM_SET method).  (39.2339)
+
+    -	A child screen fully off the bottom of the display no longer
+	autoscrolls up.  The old way, it could trap a parent/child pair of
+	screens in an undraggable condition. (39.2275)
+
+    -	Fixed a recent bug where an overscanned screen could get pulled down
+	by autoscroll under certain conditions.  (Autoscroll isn't supposed to
+	pull screens down below their DClip top).  (39.2339)
+ 
+    -	An off-the-bottom child screen can no longer mess up Intuition's mouse
+	limits (which could leave a screen unreachable under certain
+	conditions).  (39.2339)
+
+    -	ScreenPosition(SPOS_MAKEVISIBLE) of a coerced screen now works right.
+	(39.2339)
+
+    -	The mouse scaling factors are now correct for double-NTSC monitors.
+	(39.2339)
+
+    -	Keyboard control of the mouse cursor moves the mouse exactly one
+	screen pixel at a time.  This only worked when a window was active,
+	but now it works even if no window is active.  (39.2339)
+
+    -	Fixed several bugs with non-draggable child screens (39.2332):
+
+	Non-draggable child screens whose DClips don't match their parent's
+  	come up in the right place.
+	
+	Non-draggable child screens whose widths don't match their parent's
+  	no longer wrap when you drag the parent.
+
+	SPOS_FORCEDRAG now allows non-draggable child-screens to move
+	horizontally.
+
+	Non-draggable child screens didn't have their top edge validated
+  	correctly against their parent's when they are first opened.
+	
+	When resizing a window, the erasing of the old border and old GRELxxx
+	gadgets has been optimized to flash a lot less and be faster.  When
+	changing the activation state of a window, the border re-rendering
+	has been optimized.
+
+	Fixed a hole in the state machine where a task whose priority exceeds
+	that of input.device could get into trouble calling Intuition if a
+	function it called (eg.  ScreenToBack()) got deferred because of the
+	state Intuition was in (eg.  user was dragging a screen).  Intuition
+	was missing a lock and was implicitly relying on task priority for
+	things to clean up in the right order.
+
+	If OpenWindow() failed to create the window layer(s), Intuition would
+	fail to repair any damage that might have been caused in to other
+	windows of the screen.
+
+	If a MENUVERIFY window was ever sent a MENUVERIFY/MENUWAITING message
+	(because the user accessed the menus of some other window on the same
+	screen), then every normal MENUPICK from that point on would be
+	immediately preceded by a spurious MOUSEBUTTONS/MENUUP message.
+
+	While processing a menu command-key, if Intuition timed out waiting
+	for the application to reply the MENUVERIFY, Intuition would fail to
+	send a MENUPICK/MENUNULL message.  Also, two memory-allocation failure
+	paths in the MENUVERIFY code had the same problem.  These are all
+	fixed, as MENUVERIFY applications need the guarantee of receiving a
+	MENUPICK and/or a MOUSEBUTTONS/MENUUP for every MENUVERIFY.
+
+	Attached screens which are opened as SA_Exclusive now form an
+	exclusive family, allowing the benefits of both.  This used to fail.
+
+	SetIPrefs() now bounds-checks the Overscan values it receives, which
+	could be illegal if the user added or removed the VGAOnly monitor, or
+	changed between PAL and NTSC in BootMenu.
+
+    -	When Intuition splits a single InputEvent into button and movement
+	components, the button event is now sent first.  This fixes some
+	inconsistencies with extended input information like pressure, as
+	well as odd behavior of the qualifiers, in particular
+	IEQUALIFIER_MIDBUTTON.  (39.2339)
+
+    -	One of the important input token fields is now longword aligned.
+	(39.2339)
+
+    -	When Intuition splits a single InputEvent into button and movement
+	components, the button event is now sent first.  This fixes some
+	inconsistencies with extended input information like pressure, as
+	well as odd behavior of the qualifiers, in particular
+	IEQUALIFIER_MIDBUTTON.  (39.2339)
+
+    -	One of the important input token fields is now longword aligned.
+	(39.2339)
+
+    -	The code to detect damage caused when a gadget method performs
+        ScrollRaster() or ScrollRasterBF() turns out to be in fundamental
+        conflict with an application using ScrollRaster() or ScrollRasterBF()
+        in an Intuition window.  It turns out that Intuition can throw away
+        damage that the application needs.  ScrollWindowRaster() is safe.
+
+        The change is that until a gadget with the GMORE_SCROLLRASTER
+        property is added to a window, the ScrollRaster() damage detection
+        code does not run for that window.  This means that it is V37-
+	compatible until a GMORE_SCROLLRASTER gadget enters the picture.
+        If the user app uses one of those, he must switch any use of
+        ScrollRaster[BF]() within the application to ScrollWindowRaster().
+        The gadget must continue to use ScrollRaster[BF](), however.  The
+        biggest complication would come from using some gadget class the user 
+        doesn't control the source to.  How does the user know if it
+	currently uses GMORE_SCROLLRASTER, or might in the future?  If the
+	user uses such a class, switch to ScrollWindowRaster(). (39.2369) 
+
+    -	IESUBCLASS_PIXEL NEWPOINTERPOS events with IEQUALIFIER_RELATIVEMOUSE
+        were broken.  This is now fixed. (39.2369)
+
+    -	The WBenchToFront() and WBenchToBack() functions call ScreenDepth() 
+        through the LVO. (39.2369)
+
+    -	RefreshWindowFrame() now correctly redraws the window title if someone
+        pokes the title string or title string pointer directly. (39.2369) 
+
+    -	When an application obtains use of a sprite other than the pointer
+        sprite, by using the old GetSprite() call, Intuition now arranges for
+        the sprite pixel resolution to fall back to ECS compatibility.  Users
+        of ExtSprites are unaffected. (39.2369)
+
+    -	FreeScreenBuffer() now does a WaitBlit() before FreeBitMap().
+        (39.2369)
+
+    -	Figuring out where the user clicked in a string gadget now uses
+        TextFit() instead of successive TextLength()s.  (39.2369)
+
+    -	Calls to MoveScreen() or ScreenPosition() have always been ignored
+        while the user is dragging a screen or sizing/dragging a window.
+        These calls are now deferred, which is preferable and fixes a problem
+        encountered with the new Palette Prefs when it opens the color wheel
+        on a separate screen. (39.2369)
+
+    -	Did a general autodoc cleanup, including proof-reading of all V39
+        references.  Also, there was some minor cleanup to the include files.
+        Notable changes:  (39.2369)
+      
+        The ScrollWindowRaster() autodoc has been elaborated.
+
+	There are now definitions for 2.0-style system gadgets
+	(GTYP_WZOOM, GTYP_WDEPTH, etc.).  The 1.3-style definitions
+	are now defined in terms of the new ones.
+
+	Pointerclass.h|i now contains notes on the compatibility fallback
+	techniques used by Intuition/graphics when sprites other than
+	the pointer sprite are used.
+
+    -	Calling NewModifyProp() while the user is dragging the slider knob can
+	no longer leaves behind trash remnants of the knob.  (39.2415)
+
+    -	Intuition used to hard-code relationships between monitors and how
+	many "database ticks" to move the pointer when the mouse itself moves.
+	Intuition now obtains this information from the MonitorInfo structure,
+	if it is there, and falls back to the old way if it is absent.  This
+	data still needs to be added to the graphics database.  (39.2415)
+
+    -	The string "Workbench Screen" is now localizable.  (39.2415)
+
+    -	Fixed a long-standing Enforcer hit which can occur if you click the
+	mouse after the last screen has closed (say during Workbench reset).
+	(39.2415)
+
+    -	Fixed a long-standing Enforcer hit which can occur if you activate a
+	window with a requester in it by clicking on a system gadget in that
+	window.  (The bug is most detectable if no active window has had a
+	requester in it since the computer was turned on).  (39.2415)
+
+    -	Graphics has added a performance enhancement via VideoControl()
+	which allows an application to request that its ViewPort's
+	intermediate copper-lists not be kept up-to-date.  Intuition now
+	detects and handles such ViewPorts correctly by ensuring that
+	MakeVPort() is always invoked on such a ViewPort if MrgCop() is going
+	to be called.  (39.2415)
+
+    -	The public screen list is now case-insensitive.  (39.2415)
+
+    -	Bumped the version to V40.  (40.29)
+
+    -	Fixed a race condition with closing the Workbench which could cause
+	LockPubScreen(NULL) to return garbage.  (40.29)
+     
+    -	Fixed a hole in the public screen uniqueness test where if two
+	screens  tried to open simultaneously with the same public screen
+	name, it was possible that both would succeed, instead of the second
+	one failing  with OSERR_PUBNOTUNIQUE.  (40.29)
+
+    -	Screens whose bitplanes are not sufficiently aligned to be promoted
+	are now promoted into a lower resolution, instead of being shown
+	scrambled.  This fix requires the latest graphics.library and a new
+	DblNTSC and DblPAL monitor.  This ought to allow Boing! to come up
+	promoted (albeit in extra-lores).  (40.29)
+
+    -	Added a new tag, SA_MinimizeISG, which requests that Intuition give
+	the smallest possible inter-screen gap, instead of enforcing the old
+	compatible minimum.  This is required to use the new graphics
+	VC_NoColorPaletteLoad VideoControl() tag.  (40.29)
+
+    -	The calculation of the menu panel size now takes into account the
+	height of the Amiga-key symbol, and the IntuiText TopEdge.  This fixes
+	some possible crashes when using a too-big Amiga-key.  (40.29)
+
+    -	Fixed a bug where if a window failed to zoom due to lack of memory,
+	Intuition would nevertheless update the future zoom size/position to
+	the current size/position.  A window which uses title-bar zooming
+	(like our Prefs editors do) could have been stranded in its small
+	state.  (40.29)
+
+    -	Removed code that calls OpenMonitor() and CloseMonitor(), since
+	they're unnecessary.  (40.29)
+
+    -	Fixed a small bug in border redrawing when resizing a window which had
+	no depth gadget.  This bug crept in with the V40 border redraw
+	optimizations.  (40.29)
+
+    -	All non-essential Alert()s are now gone, to save space.  (40.29)
+
+    -	Fixed a bug in AllocScreenBuffer() failure where it called
+	FreeScreenBuffer() badly.  (40.34)
+
+    -	Fixed a hole in UnlockPubScreen() where it could race with
+	CloseScreen() and die with Enforcer hits.  (40.34)
+
+    -	Holding a gadget down no longer blocks OpenWindow() from completing.
+	(40.45)
+
+    -	frbuttonclass no longer crashes if the OM_NEW taglist includes
+	GA_Width or GA_Height.  (40.45)
+
+    -	Fixed a small window of vulnerability when ModifyIDCMP() connects
+	the window's WindowPort.  This could cause Enforcer hits if
+	input.device got to run at the wrong time with respect to the
+	client's call to ModifyIDCMP() or OpenWindow().  (40.47)
+
+    -	Fixed a bug where a non-draggable child screen could inadvertently
+	be moved by the system if the active monitor changed.  (40.65)
+
+    -	Miscellaneous housekeeping changes.  (40.71)
+
+    -	OpenScreen() now fails if AttachPalExtra() fails.  Otherwise,
+	Enforcer hits and awful death may result.  (40.85)
+
+    -	If sysiclass fails to allocate its TmpRas, it would fail to release
+	the semaphore which protects class-data, locking out subsequent
+	users.  Fixed.  (40.85)
+
+
+keymap 40.4
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Updated autodocs  (40.4)
+
+
+layers 40.1 
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Removed calls to Alert for the pathalogical startup cases.  (40.1)
+
+
+mathffp 40.1
+
+    -	Removed the Expunge code.  (39.1)
+
+    -	Bumped version to V40.  (40.1)
+
+
+mathieeesingbas 40.4
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Removed the IO FPU support. (Since 68020 and up are really connected 
+	to the FPU there is no real need and almost no one makes a IO FPU 
+	anymore for the 68000 machines since it is cheaper to make a 68EC030
+	plus real FPU and is *MUCH* faster). (40.1)
+
+    -	Removed the Expunge code since there is no real need for it.  (40.3)
+    
+    -	Miscellaneous changes.  (40.4)
+
+
+ramlib 40.2 
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Took out alerts that can not happen.  (40.1)
+
+    -	Miscellaneous fixes.  (40.2)
+
+
+rawinput 40.1 
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Miscellaneous fixes.  (40.1)
+    
+
+scsidisk 40.8
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Never uses IDE reads of more than 128 blocks.   (40.1)
+
+    -	Removes a "romboot.device" string that was meaningless (and 
+	has been in there since the A590). (40.1)
+
+    -	Bumped version to V40.  (40.1)
+    
+    -	Uses the new exec Gayle check code for A1200/A600.  (40.3)
+  
+    -	Some CDROM drives do not generate a media-changed error on the
+	first media insertion after reset, but just go from not-ready to
+	ready.  The SCSI driver was counting on those errors to notice
+	disk changes.  Modified scsidisk to notice that we've quietly
+	gone not-ready to ready and notify everyone as appropriate.  (40.4)
+
+    -	Bumped the constant for IDE timeout from 9 seconds to 15 seconds.
+	This is to allow for slower spin-up drives such as the new
+	Seagates.  (40.5)
+
+    -	Some timeouts were changed for greater future compatibility on
+	IDE systems.  (40.7)
+
+    -	A new entry in the error table was added for reporting media changes
+	(in particular for supporting Syquest IDE drives).  (40.7)
+
+    -	Some other minor changes to the startup code were added, including
+	things like returning real errors instead of -1 in several cases,
+	and sending StartUnit to devices that haven't spun up (very good
+	for some CDROMs and disk drives which default to not spinning up).
+
+	There's now some dead code in the A4000 IDE handling, but it doesn't
+	hurt anything (it plays with a battmem bit it now ignores).  (40.7)
+
+    -	Restored a line of source code that got deleted by mistake in the
+	40.7 changes.  (40.8)
+
+
+shell 40.2
+
+    -	Removed support for "Hold" bit and for 1.3-style redirection (set
+	oldredirect on) for space reasons.  (40.1)
+
+    -	Miscellaneous changes.
+
+
+strap 40.1 
+
+    -	Miscellaneous fixes.  (40.1)
+
+
+trackdisk 40.1 
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Miscellaneous fixes.  (40.1)
+
+
+utility 40.1
+
+    -	Bumped version to V40.  (40.1)
+
+    -	There are now two distinct versions of the library generated. One for
+	68000 systems, and one for 68020 and above systems. The 68020-only
+	version is 316 bytes smaller than the 68000 version. The 68020 version
+	is meant for use in the A1200, A3000, and A4000 ROMs. The A1200 is
+	currently our smallest ROM, so this extra space will help.  (40.1)
+
+
+wb 40.5
+
+    -	Adjusted the sizes of the OK/CANCEL and SAVE/CANCEL gadgets in the
+	Workbench requesters to match the new font+6 height values.  This
+	makes for better gadgets on high-resolution displays such as the
+	800x600 modes and also matches the new V39 prefs editors.  (39.51)
+
+    -	Fixed a long standing bug that was just found:  The system would crash
+	(sometimes) or cause Enforcer hits if files were deleted within
+	a drawer that was also selected for deletion.  This one has
+	a fundamental flaw in Workbench which had to be patched with some
+	rather tricky organization of tests... (39.52)
+
+    -	Cleaned up the Rename requester such that the user can not type in
+	the ":" or "/" characters rather than waiting until later to check
+	for them.  (String hook)  (39.54)
+
+    -	Bumped version to V40.  (40.1)
+
+    -	Workbench is now 100% font sensitive!  This means that the
+	information requester is now font sensitive and does complete
+	layout and fall-back as needed.  (40.1)
+
+    -	Found and fixed the backdrop refresh on startup timing problem
+	(it was a very interesting case of rendering the window before it
+	was ready to listen to new Preferences).  (40.1)
+
+    -	Information number displays are now all localized numbers.
+	That is, they are %lU using GTNM_Format tag of V39.  (40.1)
+
+    -	Fixed bug where physical devices would not show up any more.  Now,
+	once again, makes sure that the physical devices show up.  (40.2)
+
+    -	Fixed: WBstartup app calling addAPPXXX can cause alert.  (40.4)
+
+    -	Miscellaneous housekeeping changes.  (40.5)
+
+

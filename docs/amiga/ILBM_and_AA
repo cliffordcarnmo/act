@@ -1,0 +1,405 @@
+
+ILBM Files: V39 and AA Support Issues
+=====================================
+Carolyn Scheppner - Technical Manager - CATS U.S.
+
+(c) Copyright 1992 Commodore-Amiga, Inc.  All Rights Reserved
+
+
+For compatibility with and support of enhanced Amiga graphics
+capabilities, both the short-term and long-term possibilities, you must
+modify your software to remove any built-in limitations which would
+prevent you from growing WITH the Amiga.
+
+
+I. Get RID of Hardcoded Limits, Write Software that Adapts
+
+Many of the Amiga graphics software packages currently on the market
+are hardcoded like the old "DF0: DH0:" file requesters.
+
+Such hardcoded graphics application software limits include:
+
+- offering a fixed set of display modes or sizes
+- offering a fixed range of depths or sizes for certain display modes
+- loading or handling a maximum of 32 colors
+- Dealing with color guns as 4-bit values
+
+
+The first thing you need to think about when upgrading your application
+for V39, is NOT to upgrade it for V39.  You must upgrade your software
+so that it can adapt to arbitrary display modes, depths, and sizes.
+
+If you offer different display modes, do not arbitrarily restrict
+the modes that you offer.  If 8-bitplane hires, or hires HAM, are
+supported by a new chip set, and your software restricts a user to
+5-bitplane hires and lores HAM, then your software will be obsolete.
+
+Rewrite your software to use features such as the 2.1 display mode
+requester.  Make sure that your software can adapt to larger palettes.
+Handle R G and B values internally as at least 8-bits, not 4.
+
+
+
+II. Proper IFF ILBM Support
+
+When loading, saving, and processing ILBM files, care must be taken
+to properly support the current and future graphics capabiities of
+the Amiga.  Hardcoded limits and assumptions often exist in ILBM
+handling code.  The NewIFF39 code modules attempt to properly
+implement all of the following concepts in a backward (and hopefully
+forward) compatible manner.
+
+
+A. Proper ILBM.CAMG Chunk
+   ======================
+
+1. Saving
+
+If running under V36 or higher, save a 32-bit mode id in the CAMG ULONG.
+Some of these modes have all zeros in the upper word and are classic
+Amiga viewmodes.  Others are more complex but generally provide a
+good bit pattern in the low word to allow reasonable results if displayed
+with an old viewer.  You may wish to let your user decide if a different
+mode id should be saved.  For example, a user may prefer to work in DBLNTSC
+but need to save his images as plain HIRES LACE for genlocking.
+See V39 graphics/modeid.h for current modes.
+Use the 2.1 ASL screen mode requester or the display database if you wish
+to offer only all modes available on the user's system.
+Use ULONG modeid = GetVPModeID(viewport) if you are saving
+the mode id of a display.
+
+2. Loading
+
+Support reading and using full 32-bit modeid's from CAMG, with some
+screening for bad ID's, and fallback code if ModeNotAvailable().
+Screening is required because there are some CAMG's out there with
+garbage in the upper word.  See sample "getcamg" code at end.
+Under V39 or higher, the new BestModeIDA() graphics function can
+be used to query for a suitable and available replacement mode
+when an ILBM CAMG mode is not available.  Stop looking at the
+bits of graphics mode id's.  See the NewIFF39 code modules for example
+usage of BestModeIDA().
+
+
+
+B. Proper ILBM.BMHD X and Y aspect
+   ===============================
+
+1. Saving
+
+Use the display database in a simple manner to get the correct
+x and y aspect values for the ILBM.BMHD.
+See the "getaspect" code below.  This code gets the correct
+aspect ratio for any viewport modeid from the display
+database.  If running under < V36, it falls back to
+updated 2.0-compatible aspect values for old modes.
+
+2. Loading
+
+Perhaps you can start to expect reasonable information
+in the ILBM.BMHD x and y aspect fields.
+
+
+
+C. Proper 8-bit-per-gun ILBM.CMAP
+   ==============================
+
+Problem: the CMAPs of many ILBMs contain only 4-bits-per-gun of of R,
+G, and B, each left justified in a CMAP byte - for example, white saved
+as F0 F0 F0 rather than FF FF FF.  This made no difference when Amigas
+could only display 4-bits-per-gun of color (i.e. 4096 different colors)
+since only the upper 4 bits of each CMAP byte were used when setting
+colors, and for example, RGB of $F F F, whether stored as F0 F0 F0
+or FF FF FF, was 4-bit white.
+But AA Amigas can display 8-bits-per-gun of color (16,000,000 different
+colors), and F0 F0 F0 is not quite white - FF FF FF is.
+To properly display 8-bits of color from an ILBM whose CMAP contains
+only 4-bits of color information per gun, you must know to scale the 4 bits
+to 8 bits.  But in most ILBM's there is no flag to tell you
+whether the CMAP contains 4 left-justified or 8 significant bits per gun.
+
+Here are tips on saving and loading 8-bit-per-gun colors, and some
+strategies and a new flag bit for recognizing and
+dealing with both 4-bit and 8-bit CMAP colors.
+
+1. Saving
+
+Either always save CMAPs with 8 significant bits-per-gun, or
+save 8-bits-per-gun by default and offer a 4-bit palette save option
+(for compatibility with some products which may contain containing
+broken handcrafted CMAP color handling code).  When saving
+from a 4-bit-per-gun source, do NOT left justify each 4-bit gun in
+the CMAP R, G, and B bytes, but rather SCALE each 4-bit value to 8 bits
+by duplicating the 4-bit value in the upper and lower nibble of its
+R, G, or B CMAP byte (e.g. save white as $FF FF FF, etc.).  When saving
+under V39 or higher, if you must extract the colors from a display, use
+the new 32-bit graphics color getting function GetRGB32().  Do not read
+a ColorMap's ColorTable directly.  Save the 8 most significant bits of
+each gun in the CMAP.
+
+IMPORTANT:  A new advisory BMHD flag, BMHDF_CMAPOK, has been
+defined to indicate that an ILBM contains an 8 bit significant
+CMAP, not an old 4-bit left-justified CMAP.  The advisory flag is
+the high bit (1 << 7) of the BMHD.Flags byte (formerly named BMHD.Pad1 or
+BMHD.Reserved1).  Whenever you save an 8-bit-significant CMAP
+(either 4 bits scaled to 8 bits or true 8 bits), we suggest that you set
+this flag bit in your BMHD.Flags to advise aware loaders
+that your CMAP values are definitely not 4-bit shifted values
+and do not need scaling to 8 bits.
+
+#define BMHDB_CMAPOK    7
+#define BMHDF_CMAPOK    (1 << BMHDB_CMAPOK)
+
+
+2. Loading
+
+Detect and use all 8 bits of CMAP color, if provided, when running
+under V39 or higher machine.  If you see the new BMHDF_CMAPOK flag
+set in BMHD.Flags (described above), then you can be sure that
+the CMAP already contains 8 significant bits per gun of color.
+If you are running under V39 or higher, scale each 8-bit gun value
+to 32-bits (by duplicating it in all 4 bytes of a ULONG), and load
+the colors using one of the V39 32-bit color loading functions
+(LoadRGB32, SetRGB32, SetRGB32CM).
+
+If the BMHDF_CMAPOK bit is not set in the BMHD, then to display the
+CMAP colors correctly on an AA system, you need to determine if the
+stored CMAP color gun values are shifted 4-bit or full 8-bit values.
+If you do not examine the CMAP and instead just assume that it has 8
+significant bits, you will display the colors of many ILBMs incorrectly
+dim, while older LoadRGB4() loaders will actually display the correct
+colors (because the V39 4-bit color loading functions will scale the
+passed 4-bit values properly to 32-bits).
+
+You can try to determine if the CMAP contains all 4-bit left-justified
+RGB values by examining the low nibble of every CMAP entry you intend to use
+(do not examine additional registers or garbage which may be stored
+in the CMAP).  
+If every examined low nibble is 0, then you would probably be correct to
+assume that the CMAP contains 4-bit left-justified values.  In this case,
+you can correctly scale these values to 32-bits by first scaling to
+8 bits (i.e. duplicate the upper nibble of each gun into its low nibble),
+then scaling to 32-bits (as described above).  If any of the examined CMAP
+nibbles is non-zero, then the 8-bit CMAP values are directly scaled to 32-bits.
+Then load the colors using one of the V39 32-bit color loading functions.
+
+When loading on a pre-V39 machine, just use the upper (most significant)
+nibble of each 8-bit CMAP gun value when calling the old 4-bit-per-gun
+pre-V39 graphics functions (LoadRGB4, SetRGB4, SetRGB4CM).
+Be very careful to AND out the the low nibble of each gun before shifting
+and OR'ing R, G, and B guns to create an xRGB word for pre-V39 functions.
+
+
+D.  Stop Limiting Color Register Load Counts to 32
+    ==============================================
+
+Older IFF code, and even the early V37 NewIFF code would
+read any number of colors from an ILBM CMAP, but would
+only set a maximum 32 colors in the display.  
+Instead, the maximum number of colors set in the display
+should be limited by the display Viewport's ColorMap->Count
+rather than a hardcoded limit.  The current V37 and V39 NewIFF
+have no fixed limit on number of color registers.
+
+
+E.  Stop Limiting Depth to 5/6
+    ==========================
+
+Older IFF code had fixed limits for the maximum allowable
+depth for displays and ILBMs.  Remove your limits.
+Display as much as the system can handle.  Don't reject
+depths and depth/mode combinations arbitrarily.
+Also, you may want to stop assuming that a 6-plane ILBM
+with no CAMG is HAM or HALFBRITE (although that might still
+be a good assumption since only a pretty lame program would
+write a HAM or HALFBRITE ILBM with no CAMG chunk).
+
+
+F. Watch out for BitMap->BytesPerRow
+   =================================
+We have seen a number of products which have problems with
+BitMap->BytesPerRow rounding changes under V39 with AA.
+
+BitMap->BytesPerRow is a modulo - it is the number that must be added to the
+address of a bitmap byte to get to the same byte one scan line down.
+Prior to V39, the value of BitMap->BytesPerRow always happened to be
+the width of a bitmap scan line rounded up to the nearest multiple of 16,
+then divided by 8.  And all BitMaps, whether allocated via AllocRaster,
+or AllocMem using the RASSIZE macro, or via OpenScreen, had this
+same BytesPerRow rounding.  This rounding aligned every scanline on a
+word boundary to allow fetching by the word-oriented custom chips.  
+
+In addition, the IFF ILBM spec states that the scan lines of an ILBM BODY
+must be saved as width rounded up to the nearest multiple of 16 pixels
+(i.e. as an even number of bytes width).
+So it is not surprising that assumptions about BitMap->ByesPerRow
+crept into ILBM handling code.
+
+ILBM BODY scan lines must still be stored as pixel width rounded up
+to a multiple of 16.  But under V39 and AA, the higher bandwidth
+required to support new graphics modes requires that the scan lines
+of a displayable BitMap be aligned on larger boundaries.  Therefore
+under V39 and AA, the BytesPerRow of a BitMap must not be confused
+with the correct storage width of an ILBM.
+
+In addition, graphic applications must be very careful not to assume
+that all BitMaps of the same width will have the same BytesPerRow.
+From V39 onwards, BitMaps allocated by different methods
+(e.g. OpenScreen, AllocRaster, AllocMem, AllocBitMap),
+or allocated for display by different chipsets (ECS, AA, etc.)
+or for different display modes or a promoted display mode, may have
+different scanline alignment restrictions and therefore a different
+BytesPerRow.  Do not assume that bitplanes allocated by different methods
+can be swapped, or processor copied across scanline boundaries.
+
+To test for BitMap->BytesPerRow problems, you generally must test
+on an AA machine with either mode promotion or explicit use of higher
+bandwidth (greater alignment restriction) modes.
+
+Common symptoms of BitMap->BytesPerRow problems are 1. a skewing of
+the display, where the pixels or each successive scan line all appear
+shifted to either the left or right, creating a diagonal effect, or
+2. excess blank space at the right edge of an ILBM or a display.
+
+
+G. Watch out for interleaved bitmaps
+   =================================
+
+If your application supports capturing any screen, you
+must watch out for the new interleaved bitmaps.
+An interleaved BitMap's BytesPerRow field is still the
+modulo for getting from any one pixel to the pixel directly
+below it, BUT it is no longer even related to the rounded up
+width of the screen or viewport.  Instead, it is a MUCH
+larger value which is actually the rounded up BitMap scan
+line width TIMES the depth.  Do not assume that BytesPerRow
+is related to the width of the display.
+
+NOTE: The 2.0 Native Developer Update release of the NewIFF
+code had 2 major bugs.  The screen.c module had a 1.3
+incompatibility, and the ilbmr.c module could not properly
+save an interleaved bitmap (such as the V39 Workbench screen).
+See the newer version 37.10 of the NewIFF code.  This has
+been placed in our listings area on BIX, and sent to ADSP, and
+sent to Fred Fish.  For full AA color support, see the NewIFF39
+code (available to developers via BIX, ADSP, CIX and Devcon disks,
+and planned to be provided on the 3.0 Native Developer Update
+and given to Fred Fish).
+
+
+Under V39, an interleaved bitmap can be detected by:
+
+if(GetBitMapAttr(bitmap_ptr,BMA_FLAGS) & BMF_INTERLEAVED)
+printf("is interleaved\n");
+
+
+H. Proper Printing of new Display Modes
+   ====================================
+
+When dumping a rastport to printer under V36 and higher,
+the following IORequest field must contain a 32-bit modeid
+such as that returned by GetVPModeID(viewport).  You
+may want to allow the user the ability to print a display
+with a different modeid than it is being displayed in.
+Passing the full modeid allows the printer.device to
+properly control the aspect of the output, as long as the
+mode is available.
+
+   ULONG   io_Modes;               /* graphics viewport modes */
+
+
+ 
+-------------------------- getcamg -------------------------------
+From: /* ilbmr.c --- ILBM loading routines for use with iffparse */
+
+/*
+ * Returns CAMG or computed mode for storage in ilbm->camg
+ *
+ * ilbm->Bmhd structure must be initialized prior to this call.
+ */
+ULONG getcamg(struct ILBMInfo *ilbm)
+{
+struct IFFHandle *iff;
+struct StoredProperty *sp;
+UWORD  wide,high,deep;
+ULONG modeid = 0L;
+
+    if(!(iff=ilbm->ParseInfo.iff))return(0L);
+
+wide = ilbm->Bmhd.pageWidth;
+high = ilbm->Bmhd.pageHeight;
+deep = ilbm->Bmhd.nPlanes;
+
+D(bug("Getting CAMG for w=%ld h=%ld d=%ld ILBM\n",wide,high,deep));
+
+        /*
+         * Grab CAMG's idea of the viewmodes.
+         */
+        if (sp = FindProp (iff, ID_ILBM, ID_CAMG))
+                {
+                modeid = (* (ULONG *) sp->sp_Data);
+
+                /* knock bad bits out of old-style 16-bit viewmode CAMGs
+                 */
+                if((!(modeid & MONITOR_ID_MASK))||
+  ((modeid & EXTENDED_MODE)&&(!(modeid & 0xFFFF0000))))
+                   modeid &= 
+    (~(EXTENDED_MODE|SPRITES|GENLOCK_AUDIO|GENLOCK_VIDEO|VP_HIDE));
+
+                /* check for bogus CAMG like DPaintII brushes
+                 * with junk in upper word and extended bit
+                 * not set in lower word.
+                 */
+                if((modeid & 0xFFFF0000)&&(!(modeid & 0x00001000))) sp=NULL;
+                }
+
+        if(!sp) {
+                /*
+                 * No CAMG (or bad CAMG) present; use computed modes.
+                 */
+		modeid = 0L;
+                if (wide >= 640)        modeid = HIRES;
+                if (high >= 400)        modeid |= LACE;
+
+/* This 6 planes == HAM or HALFBRITE is not
+ * necessarily true anymore, but hopefully
+ * all NEW programs are writing a proper CAMG chunk!!
+ */
+                if (deep == 6)
+                        {
+                        modeid |= ilbm->EHB ? EXTRA_HALFBRITE : HAM;
+                        }
+
+D(bug("No CAMG found - using mode $%08lx\n",modeid));
+                }
+
+D(bug("getcamg: modeid = $%08lx\n",modeid));
+return(modeid);
+}
+
+
+-------------------------- getaspect -------------------------------
+
+    bmhd->xAspect = 0;  /* So we can tell when we've got it */
+    if(GfxBase->lib_Version >=36)
+        {
+        if(GetDisplayInfoData(NULL, (UBYTE *)&DI,
+                sizeof(struct DisplayInfo), DTAG_DISP, modeid))
+                {
+                bmhd->xAspect =  DI.Resolution.x;
+                bmhd->yAspect =  DI.Resolution.y;
+                }
+        }
+
+    /* If running under 1.3 or GetDisplayInfoData failed, use old method
+     * of guessing aspect ratio
+     */
+    if(! bmhd->xAspect)
+        {
+        bmhd->xAspect =  44;
+        bmhd->yAspect =
+                ((struct GfxBase *)GfxBase)->DisplayFlags & PAL ? 44 : 52;
+        if(modeid & HIRES)      bmhd->xAspect = bmhd->xAspect >> 1;
+        if(modeid & LACE)       bmhd->yAspect = bmhd->yAspect >> 1;
+        }
+

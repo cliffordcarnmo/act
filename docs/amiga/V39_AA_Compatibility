@@ -1,0 +1,1200 @@
+
+
+                            V39 and AA Compatibility
+
+			Commodore Engineering and CATS
+
+	(c) Copyright 1991-93 Commodore-Amiga, Inc.  All Rights Reserved
+
+
+Introduction
+
+The capabilities of the built-in Amiga graphics hardware did not change
+significantly between the introduction of the Amiga 1000 in 1985 and the
+release of the Amiga 3000 in 1990.  The ECS chip set and the display enhancer
+added several new graphics modes and increased the functionality of existing
+modes -- yet the market demanded more.
+
+This document explains some of the features of the latest generation Amiga
+graphics hardware known as the the AA (double-A) chip set, and ways to ensure
+application compatibility with these and other V39 features and changes.
+Additionally, coding methods are outlined which will allow current software
+to automatically exploit some of the new features.
+
+
+New Hardware Features
+
+The most important capabilities of the new Amiga graphics
+hardware are summarized below.
+
+o  Enhanced Bandwidth.  A 32-bit wide data bus allows doubling of
+Chip memory bandwidth (up to 2x the normal bandwidth) and supports the
+input of 32-bit wide bitplane and sprite data.  Bandwidth may be
+doubled again (to 4x) by using Fast Page Mode RAM.
+
+o  More Bitplanes.  The maximum number of bitplanes has increased
+to 8 in all resolution modes.  This translates to a 256-entry
+color table for each available mode.
+
+o  Larger Palette.  Each entry in the color table may now be 25
+bits wide (8 bits each for Red, Blue, and Green data plus 1 bit
+for genlock information).  This translates to a palette of
+16,777,216 colors.
+
+o  HAM and HALFBRITE are available in all display resolutions and depths,
+allowing for greatly enhanced dipslay modes such as 8-bitplane HIRES HAM.
+
+o  Enhanced Dual Playfield Support.  Each playfield may now have
+up to 4 bitplanes.  The bank of 16 colors in the 256-color table
+is independently selectable for each playfield.
+
+o  Enhanced Sprite Support.  Sprite resolution can be set to
+Lores, Hires, or SuperHires, independent of screen resolution. 
+Attached sprites are now available in all modes.  However, some new higher
+bandwidth modes may only allow one sprite (making an attached sprite impossible).
+Odd and even sprites may use their own independent 16-color bank from the
+256-color table.  Old format sprites are still 16 bits wide, but new format
+sprites may be 32 or 64 bits wide.  Sprites may now optionally appear in the
+border region.  The horizontal positioning resolution of sprites has increased
+to 35ns (equivalent to SuperHires pixel widths.)
+
+o  Enhanced hardware scrolling support.  The resolution of bitplane
+scrolling has increased to 35ns.
+
+o  Hardware scan-doubling support.  15 kHz bitplanes and sprites
+may now be scan-doubled for flicker-free display on 31 kHz
+monitors, and for enhanced display sharing with 31 kHz bitplanes.
+
+o  ECS compatibility.  New chips will power-up in an ECS
+compatibility mode, which will allow many older self-booting
+programs to be run on new machines.
+
+
+
+Ensuring Compatibility
+
+This section covers programming techniques that will help ensure
+that your application will work as expected when running under V39
+and on systems that use AA and future generation graphics hardware.
+
+Support of Release 2 is integral to supporting new graphics chips.
+One of the main reasons is the display database.  Starting with
+the ECS chip set, not all machines have all display modes available.
+This will be even more true in the future.  The only way to know if
+a particular mode is available is to check the display database.
+
+For a detailed explanation of how to properly open a screen using
+the display database information to check for available modes,
+refer to the Amiga ROM Kernel Reference Manual: Libraries, 3rd Edition.
+Also  see the Amiga Mail articles entitled "An Introduction to V36 Screens
+and Windows" (page IV-3) and "Opening Screens and Windows on Any Amiga"
+(Page IV-17).  Some other pertinent details can also be found in the Paris
+DevCon notes article entitled "Monitors, Modes, and the Display Database."
+
+Once a screen or other display has been opened, all manipulations should
+also be handled using system calls.  In particular, these manipulations
+must be handled by the system software:
+
+o  Allocation of graphics resources - use the graphics or intuition library
+
+o  Palette manipulation - use the graphics library
+
+o  Manipulating mouse pointer sprite - use intuition.library to
+   select or change imagery; input.device to move it
+
+o  Manipulating sprites other than the mouse pointer - use the graphics library
+
+o  Manipulating icons - use the icon library
+
+o  Allocating and changing colormaps and colortables - use the
+graphics library
+
+o  Bitplane allocations - use AllocBitMap() under V39 and higher,
+and AllocRaster() under earlier releases, but please refer to
+the next section for important information about limitations of
+AllocRaster().
+
+Furthermore, these manipulations should be handled by the system
+software whenever possible:
+
+o  Drawing operations - use the graphics library and Intuition
+library
+
+o  Blitter operations - if possible, use only use higher level blitter
+functions from graphics.library such as BltBitMap(), BltRastPort(), etc.
+If you must wait for a blit to complete, always use the system's WaitBlit()
+function, never your own.  The system knows about and handles problems with
+the BLITTER_DONE signal that different revisions of the Agnus chip have.
+If you feel that must use the blitter hardware directly (sacrificing all
+hope for any RTG compatibility), be sure to properly OwnBlitter, then
+WaitBlit, then use blitter, then DisownBlitter.
+
+Remember that system structures are subject to change or extension.
+For new graphics hardware, structures likely to be extended are those
+associated with ColorMaps, ViewPortExtras, Sprites, and many others.
+To deal with changing system structures, developers should use system
+calls to allocate, create, and manipulate these structures.  
+Many new "Get" and "Set" calls have been added to graphics.library
+to provide an upwards-compatible mechanism for reading and setting
+structure members which were previously accessed by program code either
+directly or through macros which accessed them directly.
+For future compatibility, do not directly access or change any
+structure or value for which a "Get" and "Set" call is available.
+And do not declare or AllocMem any structure for which a special
+allocation call is provided.
+
+Most of the new new "Get" and "Set" graphics calls for V39 are listed below.
+Note that some of these functions are workalike replacements for old
+gfxmacros which poked or peeked a structure, and others provide tag-based
+capability for getting and/or setting more than one attribute (Attr) of
+a structure:
+
+GetAPen(rp)(a0)
+GetBPen(rp)(a0)
+GetDrMd(rp)(a0)
+SetABPenDrMd(rp,apen,bpen,drawmode)(a1,d0/d1/d2)
+GetOutlinePen(rp)(a0)
+SetOutlinePen(rp,pen)(a0,d0)
+GetBitMapAttr(bm,attrnum)(a0,d1)
+SetWriteMask(rp,msk)(a0,d0)
+SetMaxPen(rp,maxpen)(a0,d0)
+SetRPAttrsA(rp,tags)(a0/a1)
+GetRPAttrsA(rp,tags)(a0/a1)
+
+
+Use the newest functions available.  For compatibility reasons, it
+is sometimes not possible to change the behavior of an existing system
+function to provide enhanced capabilities.  In such cases, new functions
+may be provided.  For upwards compatibility, conditionally use the newest
+functions that are available.  For example, when running under an OS
+earlier than V39, applications that wish to allocate a BitMap should use
+AllocRaster() and InitBitMap().  New or updated applications should use
+the new AllocBitMap() call instead when running under V39 or higher.
+See the V39 graphics library Autodocs for specifications of new functions
+such as AllocBitMap().
+
+
+Hardware Compatibility
+
+The new chips power-up in an ECS compatible state that allows a
+large portion of older, self-booting (i.e., game) software to run
+even though these older titles often access hardware registers
+directly.  However, directly accessing hardware should be avoided
+by any software that expects to run after the operating system has
+been started.  Keep in mind also that it is difficult to maintain
+hardware register-level compatibility even on powerup as new and
+more enhanced chip sets are developed.  Avoid directly programming the
+hardware whenever possible.
+
+In cases where applications _must_ access the hardware:
+
+o  Applications must not write spurious data to,
+   or interpret data from, currently unused bits or addresses.
+
+o  Applications must set undefined bits to zero for writes and
+   ignore them for reads.
+
+o  Mask out all the bits except the ones the application is
+   actually interested in.
+
+o  Do not assume the initial state of any registers.
+
+o  Do not read write-only registers or write to read-only registers.
+
+o  Do not read or write BYTEs to the custom chip registers
+(they are WORD registers).
+
+
+Graphics and Intuition Issues
+
+The following notes detail some known coding practices that can
+cause software to function incorrectly on V39 and AA machines.
+
+
+o  BitMap plane allocations unsuitable for new modes.
+This problem surfaces because the new chips have an increased fetch bandwidth. 
+The data for each bitplane scan line must be properly aligned in Chip memory
+for new display modes to work.
+
+For instance, these allocation methods should all be avoided under V39
+and higher:
+
+/* WRONG for AA */
+for(planenum=0; planenum<DEPTH; planenum++)                 
+   bitmap.Planes[planenum]=(PLANEPTR)AllocMem(RASSIZE(width,height),MEMF_CHIP);
+
+/* Also WRONG */
+allplanes=AllocMem(DEPTH*RASSIZE(width,height),MEMF_CHIP);  
+
+/* Also WRONG */
+for(planenum=0; planenum<DEPTH; planenum++)
+	bitmap.Planes[planenum]=(PLANEPTR)AllocRaster(width,height);
+
+The correct V39 method for allocating rasters is to use AllocBitMap()
+for graphics-level bitmaps or for CUSTOMBITMAP screens, or let Intuition
+OpenScreen() or OpenScreenTagList() allocate your bitmap.  This method will
+allow you to get the greater bandwidth and more efficient displays available
+under V39 in a manner that will be upward-compatible with future enhancements.
+The new V39 graphics function AllocBitMap() properly handles all allocation
+and alignment issues.  The Intuition OpenScreenTags() call uses AllocBitMap()
+under V39.
+
+If for some reason your existing code design prevents you from conditionally
+calling AllocBitMap() or OpenScreen() when running under V39 and higher,
+you may be able to at least get compatibility with the currently available
+higher-bandwidth modes by using AllocRaster() or AllocMem() after rounding
+your width up to a multiple of 64 pixels (absolutely no guarantees here;
+future chips may require greater alignment; we suggest you conditionally
+code to use AllocBitMap() for future compatibility).
+	
+o  Incorrect assumptions about BitMap->BytesPerRow.
+Applications that use system functions to initialize and allocate BitMaps
+and their elements should be aware that the value of BitMap->BytesPerRow
+may be different from the expected value, depending on the bandwidth mode
+chosen, the custom chip type, method of allocation, and the asked-for
+width of the allocated planes.
+
+Here's the explanation.  First, due to fetch-alignment restrictions
+in AA, some modes require a higher granularity (BytesPerRow must
+be a multiple of 4 or 8, instead of just 2 under ECS).  Second,
+BytesPerRow actually means two different things, which have always
+been identical, but aren't any more when using interleaved bitmaps.
+BytesPerRow officially means "the number of bytes you have to add
+to a pointer to a byte of the BitMap to get to the same place one
+row down".  It no longer can be depended on to mean "the number
+of bytes in this row".
+
+To detect software compatibility problems related to BytesPerRow
+changes,it is extremely important to test on a machine with the AA chipset
+and Mode Promotion turned on in the IControl Preferences editor,
+and if the software supports various display sizes, to test with sizes
+which are not divisible by 64.
+Two typical symptoms of BytesPerRow problems are 1. skewing of
+the display, where the pixel data for every line is progressively
+further right or left, giving a diagonal appearance to the display,
+and 2. images saved with excess blank space at the right.
+
+NOTE - CATS intends to provide a developer tool, probably called "BumpBPR",
+which will force all Screen and AllocBitMap() BitMap widths to a multiple
+of 64 pixels to emulate the higher scanline alignment of higher bandwidth
+AA modes.  This should allow developers to test for many BitMap->BytesPerRow
+problems on non-AA and no-promotion machines running V39.
+
+o Non-matching BitMap->BytesPerRow
+Some applications assume that two BitMaps of the same width, but allocated
+by different methods, will be swappable or block-copyable in various manners.
+This is often no longer the case.  For example, a BitMap allocated by
+OpenScreen (which calls AllocBitMap) may have raster line storage widths
+rounded up to provide higher alignment for higher-bandwidth displays.
+But the raster lines of BitMap planes allocated with AllocMem() are generally
+rounded up only to a multiple of 16 with a hardcoded macro (RASSIZE),
+and for compatibility reasons, AllocRaster() currently still performs
+only the same rounding to a multiple of 16.
+
+
+o Interleaved BitMaps
+For interleaved bitmaps, BytesPerRow is quite a bit larger than the
+number of bytes in this row.  Screen grabbers and screen printers seem
+to be the primary victims of this change.
+For compatibility, the Workbench screen is non-interleaved if it opens
+before IPrefs has run.  If opened or reset after IPrefs has run, the
+Workbench screen will be interleaved, so under V39, the Workbench
+screen in a normally booted environment is likely to be interleaved.
+GetBitMapAttr( bm, BMA_WIDTH ) can return the true width of a BitMap
+in pixels.  However, this is not the width to be used when saving a BitMap
+as an ILBM since this width may be rounded up for alignment reasons.
+
+
+o  Incorrect assumptions about the internal structure of BitMap plane data.
+New types of BitMaps may have a significantly different layout.
+For example, new V39 interleaved BitMaps are allocated as one contiguous
+block of Chip memory and and are internally different from non-interleaved
+plane data.
+
+Interleaved BitMaps consist of line 0 of plane 0, followed by
+line 0 of plane 1, line 0 of plane 2, on through to line 0 of
+plane n.  Then the pattern repeats with the data for the next
+line.  This BitMap layout reduces the color flashing effect which
+normally accompanies the blitting of individual planes.  Interleaved
+BitMaps can be requested by applications under AA.  Note however,
+that callers are not guaranteed to receive an interleaved BitMap
+whenever they ask for one.  The BMF_INTERLEAVED flag to AllocBitMap()
+is considered  a request, not a requirement.  If no sufficiently large
+continuous block of chip memory is available, it may not be possible to
+allocate the BitMap interleaved.  In that case, AllocBitMap() will attempt
+to allocate an ordinary BitMap instead.  Applications should be written
+so as not to be sensitive to whether or not a BitMap is interleaved.
+In those rare cases when it might matter, GetBitMapAttr( BMA_FLAGS )
+can be used.
+
+o  Incorrect assumptions about the Display Database.
+Data about a display mode could change between one version of Kickstart
+and another, between different models of the Amiga and even between
+similar models.  Treat the data in the display database as dynamic!
+Information that was available under V37 may not necessarily
+be available under V39.  For instance, VGA and A2024 mode
+information is no longer in ROM and unless they are added by the
+user, there will be no information about these modes available.
+
+Never cache information about the DEFAULT_MONITOR_ID modes
+because the default monitor can be changed by the user with the
+promotion feature.  
+
+Use the 2.1 asl.library screen mode requester to present your
+user with choices which are actually available (Note - 2.1 asl.library
+works under 2.0 Kickstart, and a free amendment to distribute 2.1
+asl.library is available for 2.0 Workbench licensees).
+
+o  Direct handling of ViewPorts.
+Applications that use low-level graphics calls to create the View
+directly may have problems in V39.  MakeVPort() and MrgCop() can now
+return an error.  In addition, the gap required between ViewPorts may
+now need to be significantly larger than on pre-AA chips, where it was
+never more than 3 non-interlaced lines (6 interlaced lines).
+The V39 graphics function CalcIVG() (Calc Inter Viewport Gap) may be used
+to determine how many blank lines will be needed above a ViewPort.  Note
+that Intuition currently uses at least 3 lines, or MAX(3,CalcIVG(v,vp))
+(substitute 6 for 3 if interlaced).  Also note that for old display modes
+with old depths and 4-bit-per-gun colors, the gap is unchanged from
+that under the ECS and original chip sets.
+
+o  Incorrect use of PAL or NTSC flags.
+The common method of determining whether a machine is running in
+PAL or NTSC mode has always been to check for the PAL bit in
+GfxBase->DisplayFlags:
+
+	BOOL IsPAL;
+
+	IsPAL=(GfxBase->DisplayFlags & PAL) ? TRUE : FALSE;
+
+One classic reason for desiring such a PAL/NTSC determination is to decide
+what size or type display to open.  The other common reason is to determine
+what clock constant to use in serial or audio period calculations (Amigas
+built as PAL machines have a slightly different system clock crystal frequency
+than Amigas built as NTSC machines, and serial/audio period calculations are
+dependent on this frequency).
+
+Because V37 and V39 are more adaptable, this bit may longer be counted
+on to mean the user's preferred display mode, nor to even signify the
+probable clock crystal in the user's system.
+
+For accurate serial and audio period calculations, you need to determine
+whether the system has a system clock crystal designed for PAL or NTSC.
+There is no totally foolproof way of doing this.  Under 1.x through 2.x,
+your best indicator of whether a system has a PAL system clock crystal
+is the GfxBase->DisplayFlags PAL bit.  This bit should tell you the
+hardware default of the machine, and should only mislead you if the user
+has moved the PAL/NTSC jumper or has run a PD program to change the bootup
+mode between PAL and NTSC.
+
+Under V39 (and probably above), new BootMenu options now allow the user
+to software-select PAL or NTSC as the default graphics environment.
+This can modify the GfxBase->DisplayFlags PAL bit, but obviously does not
+change the system clock crystal.  Therefore, under V39 and higher, a new
+DisplayFlags bit called REALLY_PAL has been added to signify the whether
+the motherboard hardware jumper setting appears to be PAL.  Therefore,
+under V39 and higher, the best bit available for determining NTSC or PAL
+hardware is the new REALLY_PAL bit.
+
+If your software needs to determine the characteristics of default
+displays, prior to V37 look at DisplayFlags PAL bit.  Under V37 or higher,
+instead use GetDisplayInfoData() to get information about the modeid
+LORES_KEY or HIRES_KEY, and then check the DisplayInfo.PropertyFlags
+for properties such as DIPF_IS_PAL (which will be true for both
+PAL and DblPAL).
+
+If your software instead needs to determine the characteristics of the
+user's preferred display mode to work in (as evidenced by the mode of
+their Workbench or other default public screen), you can GetDisplayInfoData()
+on the modeID of the default public screen.  Be aware however that this
+modeID might not be any of the PAL or NTSC modes, but rather VGA or some
+other mode.
+
+#include <graphics/displayinfo.h>
+
+	Bool IsPAL;
+	struct Screen *screen;
+	ULONG modeID = LORES_KEY;
+	struct DisplayInfo displayinfo;
+
+	/* Open graphics.library, etc. */
+
+	/* Above, modeID is initialized to LORES_KEY.  You should inquire
+	 * about LORES_KEY or HIRES_KEY if you are interested in the
+	 * display characteristics of default displays (for example, what
+	 * OpenScreen() will provide if you don't use tags to ask for a
+	 * display mode with an explicit monitor like PAL or NTSC or VGA).
+	 *
+	 * Do the following LockPubScreen part if you are instead interested
+	 * in the display characteristics of the modeID of the user's default
+	 * public screen (usually Workbench).
+	 */
+	if (screen = LockPubScreen(NULL))
+	{
+		modeID = GetVPModeID(&(screen->ViewPort));
+		UnlockPubScreen(NULL,screen);
+	}
+
+
+	/* Now get information about the modeID */
+	if (GetDisplayInfoData(NULL, (UBYTE *) &displayinfo,
+		sizeof(struct DisplayInfo), DTAG_DISP, modeID))
+	{
+		/* True if PAL or DblPAL */
+		if (displayinfo.PropertyFlags & DIPF_IS_PAL)
+			IsPAL = TRUE;
+		else
+			IsPAL = FALSE;
+	}
+
+
+o  Incorrect assumptions about ColorMaps and ColorTables.
+The color system has undergone significant changes so new V39 graphic
+functions should be used to manage color whenever possible. 
+ColorMaps should always be allocated using GetColorMap(); freed using
+FreeColorMap(); colors changed using LoadRGB4/32(), SetRGB4/32(),
+or SetRGB4/32CM(); and colors queried using GetRGB4/32().
+Specifically, the value ColorMap->ColorTable and the structure it points
+to should never be poked or read directly. 
+
+The color functions with names containing ``32'' are new V39 functions for
+getting, setting, and loading color registers.  These new functions treat
+color guns (R, G, B) each as 32-bit values for handling not only the
+8-bit color available in AA but also any conceivable future needs.
+Use of these new 32-bit color functions is required to display the
+16 million different color shades available under AA and V39.
+The old 4-bit color manipulation functions can only provide 4096
+different colors.  Use these new 32-bit color functions to ensure the
+future compatibility of your V39 applications.
+
+When using 4 or 8-bit R/G/B values, scale your values to 32 bits.
+Scale 8 bit R/G/B values to 32 bits by duplicating the 8-bit value in
+all 4 bytes of the 32-bit value.  Scale 4-bit values to 32 bits by duplicating
+the 4 bit value in each nibble of the 32-bit value.
+
+		4-bit red value $3  becomes $33333333
+		8-bit red value $1F becomes $1F1F1F1F
+		8-bit red value $03 becomes $03030303
+
+The graphics.library VideoControl() function should be used to
+get, set, or clear the special features associated with ColorMaps.
+
+o  Poking Copper lists or copinit.
+The structure and order of Copper lists will change for all modes,
+so any program that relies on poking the Copper lists will likely break.
+Certain programs (especially games) make assumptions about copinit and
+poke it directly.  These programs will break with the AA chips and V39
+unless the AA machine is running in a non-AA old-chip emulation mode.
+Note again that copinit has changed, and will continue to change.  Do Not Touch.
+
+o  Dangerous bits in the display hardware.
+Many bits in the custom chip registers that were previously undefined
+now have a function.  Beware of poking the following bits.
+
+	o  In BPLCON0: bits 0, 4, 5, 6, and 7
+
+	o  In BPLCON2: bits 7, 8, 9
+
+	o  In BPLCON3: bits 0,1,6,7, and bits 9 through 15
+
+o  Illegal use of the processor to write to bitplane and sprite data registers.
+Bitplane and sprite data registers should NOT be written to by the processor.
+The correct way for data to be fed to the chips is by setting up DMA that
+points to the data in Chip memory.
+
+o  Illegal re-use of sprites on the same line.
+Attempting to re-use sprites on the same horizontal line by redefining the
+sprite data is illegal and unsupported.  Sprites may only be re-used
+vertically, and then only with at least a one line gap between re-uses.
+See the Amiga Hardware Reference Manual for an example of sprite re-use.
+
+o  Incorrect allocation of sprite image data.
+Because of the increased fetch bandwidth of the new chips, sprite image
+data must be properly aligned in Chip memory.  Under 2.0, the best way to
+allocate this memory is to call the Exec library AllocMem() function.
+Use the new AllocSpriteData() call for allocation of new mode sprites
+under V39 and higher.
+
+o  Forgotten FreeSprite() call.
+Sprites may now have a number of different modes.  However, under Intuition,
+these modes are global to all sprites.  If a program gets a sprite in a
+particular mode, but then does not free it, Intuition (and all Intuition-based
+programs including Workbench) are forced to use sprites in the mode of the
+forgotten sprite.  In general, it is good practice to not use sprites other
+than the pointer when coding software that is meant to be Intuition-compatible.
+
+o  Illegal use of Intuition pointer data.
+Intuition's pointer handling has become much more sophisticated.
+People playing tricky games with the pointer data may get into trouble
+if they make assumptions about the data format of the Intuition pointer
+which can change depending on the display mode.  
+
+o The old SetPointer() and ClearPointer() functions still work,
+giving compatible Intuition pointers.  Likewise, the pointer imagery in
+devs:system-configuration will be used until a pointer.prefs file is
+received.  However, due to growing complexity in the pointer subsystem,
+calling SetPointer() or ClearPointer() from within an input handler or
+inside Begin/EndRefresh() runs a risk of deadlocking.  There are currently
+some patches in place to help prevent a deadlock, however we warn
+people to stick to simple rendering functions only when inside LockLayer(),
+LockLayerInfo(), BeginRefresh(), BeginUpdate(), etc. and not to call
+Intuition or other high-level system functions inside of LockIBase().
+As well, great care should be taken inside an input handler (it's generally
+best for the handler to signal a high-priority task which actually does the
+work).  Don't be the application that dies under the next release when an
+inappropriate function that happened to work now deadlocks because its
+handling has become more sophisticated.  See the Autodocs for these
+functions for more information on what other system calls are OK to use
+with these functions.
+			
+o Intuition and Graphics are involved in a scheme to maximize
+compatibility with older sprite-using applications.  The AA chipset
+supports variable sprite resolution and width, but the setting affects
+all sprites.  If an application requests a specific sprite width
+(through the old graphics.library/GetSprite() call or the new
+graphics.library calls (GetExtSpriteA() and ChangeExtSpriteA()), and
+Intuition's sprite is not compatible with that request, then
+graphics.library will blank Intuition's sprite and notify Intuition.
+Intuition will rebound by generating the most suitable pointer sprite
+which is compatible.
+
+o Using an attached sprite for the Intuition pointer was quasi-supported
+under 2.0.  It no longer works.
+
+o The pointer information returned by GetPrefs() is no longer kept
+up-to-date, since the pointer data can exceed the storage space
+available in struct Preferences.  (The ROM default pointer will be
+returned in all cases).  (Like V37, V39 ignores the pointer data in
+calls to SetPointer() after the first one, for reasons such as this).
+
+o Pens for Screens
+The handling of defaults for the pen array is a bit involved because
+of compatibility issues.  The only change for old applications should
+be those who pass an SA_Pens array of {~0}.  They will get the new
+values for BARDETAILPEN, BARBLOCKPEN, and BARTRIMPEN.  This will only
+affect the color of their screen title bar, and the color of the menus of
+any window on that screen which requests new-look menus (WFLG_NEWLOOKMENUS).
+Applications that specify no SA_Pens array or ones who specify an SA_Pens
+array with at least one explicit pen provided get V37-compatible defaults.
+Our options were limited because the request for default palette and
+default pens were too loosely coupled (until SA_LikeWorkbench).
+
+o Screen.BitMap is becoming obsolete.
+The original Screen structure has an embedded instance of a BitMap
+structure, which can not grow to support current needs.  When
+Intuition allocates a non-CUSTOMBITMAP screen's BitMap,
+it now uses AllocBitMap(), and just copies the old struct BitMap portion
+into the embedded &screen->BitMap.  Intuition internally now references the
+true BitMap (obtainable as screen->RastPort.BitMap) instead of &screen->BitMap.
+We recommend that applications do the same.  This is the direction we're
+headed anyways for RTG, and is needed for double-buffering.
+There are currently some patches in Intuition to handle people who are
+poking the Screen.BitMap depth or planes.  Such poking is strongly
+discouraged.  See the new V39 Intuition function ChangeScreenBuffer().
+
+o  OpenScreen failure if too deep
+Since all modes and all depths are no longer available on every systems,
+OpenScreen will fail if you request a mode/depth combination that is not
+displayable.  This can be an issue both for applications which may
+have been counting on allocating extra planes this way, or counting
+on having extra planes which would not be displayed.
+There is a new SA_ErrorCode value, OSERR_TOODEEP.
+
+o  Console compatibility
+Applications which draw graphics in the console portion of the window, but
+use console scroll commands may not work if they are drawing their text in
+other than pen 1 or pen 0 when only the bitplane for those colors is scrolled.
+
+Applications that use pen sharing on their own screens should allocate and
+set pens 3-7 if they plan on using those colors in console.  The console
+device still uses pens 0-7 just as it always has.
+
+
+Promotion-Related Issues
+
+Under V39 and AA, when Mode Promotion is turned on, display modes which
+use the default monitor (e.g. display modes which are not explicitly PAL
+or NTSC) are promoted to scan-doubled or de-interlaced modes such as
+DblPAL or DblNTSC to provide a flicker-free display.
+Mode Promotion, on or off, is controlled system-wide by the IControl
+Preferences editor and the availability of the DblNTSC or DblPAL
+monitor.
+
+Mode promotion can change the behavior of the system in a manner which
+may be incompatible with certain applications.
+
+o The overscan limits of DblNTSC (DblPAL) are a little less than the
+overscan limits of NTSC (PAL).  (For 3.01, the DblNTSC (DblPAL) limits
+have been extended and are now comparable to, but still less than, NTSC (PAL)).
+
+o It may be harder to center a DblNTSC or DblPAL screen on certain
+multiscan monitors than it was to center a hardware de-interlaced NTSC or PAL
+screen.  (3.01 provides additional centering flexibility which
+helps solve this problem).
+
+o An interlaced screen is promoted to a non-interlaced screen, which
+has obvious implications on custom copper-lists and copper-list pokers.
+
+o The higher resolutions/depths of the AA chipset require higher
+alignment restrictions on bitplanes.  Fortunately, most applications
+either let Intuition allocate their screen's BitMap or else they
+have a custom BitMap whose width is a multiple of 64 pixels (the
+highest alignment currently required by AA).  However, if the
+custom BitMap is an unusual width, it may not be sufficiently
+aligned for the hardware.  Such a screen can come up skewed when
+promoted.
+
+o Coercion of displays in back to match a promoted or explicit DblNTSC
+or DblPAL front display may result in a lower resolution mode for
+unsuitably aligned back displays.
+
+"1x" modes require 16-pixel (word boundary) alignment of each
+scan-line.  "2x" modes require 32-pixel (longword boundary) alignment,
+while "4x" modes require 64-pixel (double-longword boundary)
+alignment.  Here is a short reference:
+
+	o 140 ns pixels (lores in 15 kHz modes, extra-lores in 31 kHz modes)
+	  1-8 planes require 1X
+
+	o 70 ns pixels (hires in 15 kHz modes, lores in 31 kHz modes)
+	  1-4 planes require 1X
+	  5-8 planes require 2X
+
+	o 35 ns pixels (super-hires in 15 kHz modes, hires in 31 kHz modes)
+	  1-2 planes require 1X
+	  2-4 planes require 2X
+	  5-8 planes require 4X
+
+As the graphics.library AllocBitMap() function takes care of
+allocating suitably-aligned BitMaps for you, you do not need to worry
+about alignment when using modern system calls.
+
+o The AA hardware does not allow dual-playfield non-interlaced screens
+to be scan-doubled, so they will appear half as tall as their
+non-promoted counterparts.
+
+o Like earlier chipsets, the AA chipset still supports eight sprites.
+In much the same way as ECS and original chipsets lose sprites when
+overscan is increased, many of the new modes have insufficient spare
+cycles to fetch data for these sprites.  A promoted screen may have
+fewer sprites left than the corresponding 15 kHz mode, meaning that
+some sprites other than the pointer sprite may vanish.
+
+NOTE - If the system is aware that additional sprites are needed,
+it will attempt to drop a display's bandwidth (if possible) to allow
+additional sprites.  To cause this to happen, either GetSprite() your
+sprites before opening your display, or RemakeDisplay() after doing
+your GetSprite() calls.
+
+o  There is currently no 31 kHz mode having 1280 pixels per line.
+That would require 17.5 ns pixel speeds, which is twice what the
+AA chipset is capable of.  Therefore, SuperHires screens are promoted
+to 640 pixel-per-line screens, which generally can scroll.
+This is required for systems which have a VGA-only monitor, but otherwise
+might not be the desired way to display this mode.  To prevent promotion of
+SuperHires to Hires, an application could ask explicitly for PAL
+or NTSC SuperHires.  However, keep in mind that future chipsets
+may be capable of de-interlacing 1280-wide displays, and this would
+be defeated if NTSC or PAL is explicitly requested.  Also remember
+that a user with a VGA-only monitor can not display these modes.  The V39
+BestModeIDA() function may be used to determine the best available mode.
+
+o  Applications that specifically request the NTSC or PAL monitor when
+opening a display will receive non-promoted PAL or NTSC, suitable for
+genlocking, etc.  For interlace modes, this will not be a flicker-free display.
+Therefore, productivity and design applications that wish to offer
+an explicit PAL/NTSC choice should use the display database or 2.1
+ASL screen mode requester to allow the user to choose a flicker-free
+display mode that is available on their system.
+
+
+Other Compatibility Issues
+
+o  Library Vector Offsets and SetFunction().
+In general, some new LVOs supersede old ones.  While the old ones still work,
+software that calls SetFunction() based on the old LVOs may no longer catch
+what they were hoping to.  An example from V37 was people who called
+SetFunction() on AutoRequest().  Most system requests go through EasyRequest()
+now.  A V39 example would be SetWindowPointer() replacing SetPointer().
+
+o  Test for Memory by Poking Breaks
+Apparently, some games test for RAM at $200000 by writing a pattern
+there and immediately reading it back.  On the A1200 bus, such games
+will be fooled.  Never test for RAM by poking/peeking.  Always use
+Exec's memory allocation functions, or the Exec TypeOfMem() function
+which can tell the caller whether (and what type of) memory exists at
+any particular address.
+
+o  Preferences file format changes
+The format of some Preferences files have changed of necessity to
+support new system capabilities, and these files may continue to change.
+The documentation which has been provided only shows some chunks which
+may be encountered in a system Preferences file.  There is no guarantee
+that new chunks will not be added, or that the current chunks will
+continue to be used.   Do not read or write system Preferences files.
+Instead use other provided system mechanisms for reading and setting
+such items (for example, use device-specific commands or structures for
+controlling device preferences, functions such as QueryOverscan() and
+LockPubScreen() for determining display characteristics, etc.)
+
+o  Changes to support for width-scaling of fonts
+Under V37, different widths of one YSize of a scalable font could
+be opened with a tagged OpenDiskFont() by first running a patch called
+setpatchwtam.  Under V38, this patch program does nothing, and an
+incorrect already-opened width may be returned.  Under V39, the correct
+requested width should again be returned, and these loaded width-scaled
+fonts are both hidden from AvailFonts() and should not be accidentally
+provided if application just does OpenFont() for the same YSize.
+
+o  Self-modifying, copied, and directly loaded code
+Self-modifying code without proper cache control has been breaking
+since the 68020 was introduced.  The larger caches of the 68030 and 68040
+processors make it even more necessary to use the exec cache control
+functions such as CacheClearU() which have been available since V37.
+The cache control functions make it possible to flush the processor
+caches after modifying code in place, copying code to a different memory
+address, or placing code into memory via any mechanism that bypasses LoadSeg.
+Cache-control functions are also provided for DMA controllers which
+DMA data into memory.
+
+o  IFF code
+Older IFF sample/example code contains many hardcoded limits and
+accesses some structures which may no longer be accessed directly.
+The older code (and even the code listed in the Amiga ROM Kernel Reference
+Manual: Devices, 3rd Edition) also would not load more than 32 color registers.
+The new IFF code, NewIFF39.lzh, attempts to use the latest system functions
+wherever possible in a conditional backward-compatible manner.
+The new code provides support for the full AA color palette, arbitrary
+display modes, the clipboard, overscan and autoscroll screens, and
+loading/saving of 24-bit ILBMs.  Please see the ILBM Compatibility
+notes for additional information on ILBM compatibility and support
+of AA features.
+
+
+o Tablet driver writers should test that their tablets now work with
+console drag selection (known not to work in the 2.04 OS).
+
+
+o Pre/Post DMA Cache functions and 68040
+For those of you with DMA devices that need to use the CachePreDMA()
+and CachePostDMA() calls:  Be careful as incorrect use of these
+calls may look like they work fine in 68000/68020/68030 systems but
+may cause strange system behavior and even major system slowdown
+on 68040 systems.
+
+The correct way to use these calls is:
+
+	original_length=length;
+	CachePreDMA(address,&length,0);
+
+	/* Optional, multiple ones here for breaking up
+	 * DMA operations within the single larger DMA block
+	 * defined in the first call to CachePreDMA()
+	 */
+	CachePreDMA(....,....,DMA_Continue);
+
+	/*
+	 * Very important to call CachePostDMA() with the
+	 * exact same values as CachePreDMA()
+	 */
+	CachePostDMA(address,&original_length,0)
+
+Also, you must make sure they match up.  If they do not, the system will not
+be able to figure out that the DMA that was starting has finished.
+Internally, the OS needs to track these things for the 68040 and higher
+processors and may need to track them even more in the future.
+
+
+o An upcoming release of 3.0 (3.01?) will support the dos.library SetVBuf()
+function.  From V36 to V39 this call did nothing.  It will now properly change
+buffering modes, sizes, etc.  For programs using Dos buffered IO calls
+(FGetC, FPutC, FRead, etc) this can make a major improvement in IO
+performance if the buffer size is increased (and if the buffering mode
+is changed when writing to BUF_FULL).
+
+
+For additional information on OS changes, take particular note of all
+BUGS and NOTES entries in the sytem autodocs.
+
+
+
+
+Taking Advantage of New Features
+
+By simply using system features and functions which were introduced
+in Release 2, you can write adaptable software that can automatically grow
+and support many new system software and hardware capabilities.
+
+
+Add a bit of conditional code to treat color guns (R, G, and B) as
+at least 8-bits each, and to conditionally use the new 32-bit V39 color
+setting and getting functions, and your application can provide full
+AA palette support.
+
+
+
+Here are some strategies for adapting to new system capabilities.
+
+o  Use the asl.library requesters if available.
+They are localized, they cut down on the amount of code you have to
+maintain, and they grow with the system.  2.0 Workbench licensees may
+get a free amendment to distribute the 2.1 asl.library which contains
+the screen mode requester.
+
+o  Adapt to previously impossible deeper modes.
+Properly written software can use the calling syntax of the current graphics
+and Intuition library functions to open the screen modes with larger numbers
+of bitplanes.  These modes are simply deeper bitplane versions of existing modes:
+Lores 6,7, and 8 bits; Hires 5,6,7, and 8 bits; SuperHires 3,4,5,6,7,
+and 8 bits; and VGA 3,4,5,6,7, and 8 bits.  
+
+Note that the display database must be checked to see if the user's
+machine supports the desired mode and number of bitplanes.
+
+Intuition's screen functions can be used to open these previously
+impossible screens, but programs cannot rely on Intuition to throw out
+all "bad" possibilities.  For example, V36 Intuition will open an
+8-bitplane Lores screen, but this is a waste of memory if the new chip
+set is not present since the 3 extra bitplanes will simply go unused.
+Programs will therefore need to explicitly check the display database
+to find out what the chips support.  In V39, Intuition will check the
+chips for you and fail to open a screen which is "too deep".  There is
+a new SA_ErrorCode value, OSERR_TOODEEP.
+
+
+Note on Mode IDs.  The currently defined display database mode IDs have
+all been moved from <graphics/displayinfo.h> to the new include file
+<graphics/modeid.h>.  Do not attempt to create your own display mode
+IDs by OR'ing together monitors and modes unless the include file
+explicitly allows it.  Do not try to draw conclusions about display
+characteristics by interpreting bits in the display mode ID.  Instead,
+pass the mode ID to the display database functions to discover the
+display characteristics (see the example below and other examples in
+Amiga Mail, Devcon Notes, Amiga RKRM: Libraries manual, and the new
+screen mode requester example).
+
+The complete example listed below will check the display database
+entry for a LORES screen and open a screen with the maximum allowable
+number of bitplanes (assuming there is enough Chip memory).  On an Amiga
+with any chip set up to and including ECS, this code will open a
+5-bitplane screen.  On a machine with the AA chip set, the screen will
+be 8 bits deep.  The code will then draw one vertical line for each
+available color using Intuition's preferred palette (which can be 
+set by the user with Preferences).  The example requires V36 or a
+later version of the OS.
+
+/*  maxdepthlores.c  */
+
+#include <exec/types.h>
+#include <intuition/intuition.h>
+#include <graphics/displayinfo.h>
+#include <dos/dos.h>
+
+#include <clib/exec_protos.h>
+#include <clib/intuition_protos.h>
+#include <clib/graphics_protos.h>
+#include <clib/dos_protos.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+
+struct Library *IntuitionBase;
+struct Library *GfxBase;
+
+void Quit(char *whytext,LONG failcode)
+{
+    if(*whytext) printf("%s\n",whytext);
+
+    if (IntuitionBase)	CloseLibrary(IntuitionBase);
+    if (GfxBase)	CloseLibrary(GfxBase);
+
+    exit(failcode);
+}
+
+void main(void)
+{
+    ULONG modeID = LORES_KEY;
+    DisplayInfoHandle displayhandle;
+    struct DimensionInfo dimensioninfo;
+
+    UWORD maxdepth, maxcolors;
+    ULONG soerror = NULL,colornum;
+    struct Screen *screen;
+
+    if ((GfxBase = OpenLibrary("graphics.library",36))==NULL)
+        Quit("graphics.library is too old <V36",RETURN_FAIL);
+
+    if ((IntuitionBase = OpenLibrary("intuition.library",36))==NULL)
+        Quit("intuition.library is too old <V36",RETURN_FAIL);
+
+    if ((displayhandle=FindDisplayInfo(modeID))==NULL)
+        Quit("modeID not found in display database",RETURN_FAIL);
+
+    if (GetDisplayInfoData(displayhandle,(UBYTE *) &dimensioninfo,
+    sizeof(struct DimensionInfo),DTAG_DIMS,NULL)==0)
+        Quit("mode dimension info not available",RETURN_FAIL);
+        
+    maxdepth=dimensioninfo.MaxDepth;
+    printf("dimensioninfo.MaxDepth=%d\n",(int) maxdepth);
+
+    if (screen=OpenScreenTags(NULL, SA_DisplayID    ,modeID,
+                                    SA_Depth        ,(UBYTE) maxdepth,
+                                    SA_Title        ,"MaxDepth LORES",
+                                    SA_ErrorCode    ,&soerror,
+                                    SA_FullPalette  ,TRUE,
+                                    TAG_END))
+        {
+            /* Zowee! we actually got the screen open!
+             * now let's try drawing into it.
+             */
+            maxcolors=1<<maxdepth;
+            
+            printf("maxcolors=%d\n",(int) maxcolors);
+            
+            for(colornum=0;colornum<maxcolors;++colornum)
+            {
+                SetAPen(&(screen->RastPort),colornum);
+                Move(&(screen->RastPort),colornum,screen->BarHeight + 2);
+                Draw(&(screen->RastPort),colornum,screen->Height - 1);
+            }
+            Delay(TICKS_PER_SECOND * 6);
+
+            CloseScreen(screen);
+        }            
+    else
+        {   /* Hmmm.  Couldn't open the screen.  maybe not
+             * enough CHIP RAM? Maybe not enough chips! ;-)
+             */
+            switch(soerror)
+            {
+                case OSERR_NOCHIPS:
+                    Quit("Bummer! You need new chips dude!",RETURN_FAIL);
+                    break;
+                
+                case OSERR_UNKNOWNMODE:
+                    Quit("Bummer! Unknown screen mode.",RETURN_FAIL);
+                    break;
+                
+                case OSERR_NOCHIPMEM:
+                    Quit("Not enough CHIP memory.",RETURN_FAIL);
+                    break;
+                
+                case OSERR_NOMEM:
+                    Quit("Not enough FAST memory.",RETURN_FAIL);
+                    break;
+                
+                default:
+                    printf("soerror=%d\n",soerror);
+                    Quit("Screen opening error.",RETURN_FAIL);
+                    break;
+            }
+            Quit("Couldn't open screen.",RETURN_FAIL);
+        }
+
+Quit("",RETURN_OK);	/* clean up and exit */
+}
+
+
+
+o  Open on Workbench.
+One of the easiest ways to help a given program peacefully coexist with
+new hardware is to allow it to open on the Workbench screen (or on any
+public screen).  Software written this way should be robust enough that
+it can find out from the system any information it might need about the
+display environment, and, if it understands the kind of screen that it's
+on, use the appropriate graphics.library calls to manipulate its windows.
+
+Here's some example code that determines the depth of the default public
+screen and opens a window on it.  If it were part of a real application,
+this code would tell how many colors the screen has.
+
+Add some conditional V39 palette sharing code and you can even have
+your own color registers to use, if available, or closest matching
+register to share.
+
+
+/* depthawarevisitor.c */
+
+#include <exec/types.h>
+#include <intuition/intuition.h>
+#include <graphics/displayinfo.h>
+#include <dos/dos.h>
+
+#include <clib/exec_protos.h>
+#include <clib/intuition_protos.h>
+#include <clib/graphics_protos.h>
+#include <clib/dos_protos.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+
+
+struct Library *IntuitionBase;
+struct Library *GfxBase;
+struct Screen  *screen = NULL;
+
+
+void Quit(char *whytext, LONG failcode)
+{
+    if(*whytext) printf("%s\n",whytext);
+
+    if (screen)		UnlockPubScreen(NULL, screen);
+    if (IntuitionBase)	CloseLibrary(IntuitionBase);
+    if (GfxBase)	CloseLibrary(GfxBase);
+
+    exit(failcode);
+}
+
+
+void main(void)
+{
+    struct Screen *screen;
+    struct DrawInfo *drawinfo;
+    struct Window *window;
+    UWORD depth;
+
+    if ((GfxBase = OpenLibrary("graphics.library",36))==NULL)
+        Quit("graphics.library is too old <V36",RETURN_FAIL);
+
+    if ((IntuitionBase = OpenLibrary("intuition.library",36))==NULL)
+        Quit("intuition.library is too old <V36",RETURN_FAIL);
+
+    if (!(screen = LockPubScreen(NULL)))
+        Quit("Can't lock default public screen",RETURN_FAIL);
+
+    /* Here's where we'll ask Intuition about the screen. */
+    if((drawinfo=GetScreenDrawInfo(screen)) == NULL)
+	Quit("Can't get DrawInfo",RETURN_FAIL);
+
+    depth=drawinfo->dri_Depth;
+
+    /* Because Intuition allocates the DrawInfo structure,
+     * we have to tell it when we're done, to get the memory back.
+     */
+    FreeScreenDrawInfo(screen, drawinfo);
+
+    /* This next line takes advantage of the stack-based amiga.lib
+     * version of OpenWindowTags.
+     */
+    if (window = OpenWindowTags(NULL, WA_PubScreen ,screen,
+                                      WA_Left      ,0,
+                                      WA_Width     ,screen->Width,
+                                      WA_Top       ,screen->BarHeight,
+                                      WA_Height    ,screen->Height - screen->BarHeight,
+                                      WA_Flags     ,WINDOWDRAG|WINDOWDEPTH|WINDOWCLOSE|
+                                                    ACTIVATE|SIMPLE_REFRESH|NOCAREREFRESH,
+                                      WA_Title     ,"Big Visitor",
+                                      TAG_END))
+    {
+
+        printf("depth=%d\n",depth);
+        
+        /* All our window event handling might go here */
+
+        Delay(TICKS_PER_SECOND * 10);
+
+        /* Of course, some other program might come along
+         * and change the attributes of the screen that we read from
+         * DrawInfo, but that's a mean thing to do to a public screen,
+         * so let's hope it doesn't happen.
+         */
+
+        CloseWindow(window);
+    }
+
+Quit("",RETURN_OK);	/* clean up (close/unlock) and exit */
+}
+
+
+o  If necessary, use tag-extended older structures with 1.3 functions.
+If you are not yet able to drop support for 1.3 systems, use tag-extended
+structures such as ExtNewScreen and ExtNewWindow to provide V37 and V39/AA
+enhanced capabilities with 1.3-compatible code.  See the RKM Libraries volume
+Intuition chapters for examples which use these tag-extended structures.
+An example of such coding is the NewIFF39 code.
+ 
+
+
+Table:  New AA Modes (In Addition to Modes Supported by ECS)
+
+
+Mode			Planes	Colors			Bandwidth (See note 1)
+----			------	------			----------------------
+LORES (320x200)		6	64				1
+			7	128				1
+			8	256				1
+			8	HAM 256,000+ (see note 2)	1
+
+HIRES (640x200)		5	32				2
+			6	EHB 64 (see note 3)		2
+			6	HAM 4096 (see note 4)		2
+			6	64				2
+			7	128				2
+			8	256				2
+			8	HAM 256,000+ (see note 2)	2
+
+SUPERHIRES (1280x200)
+			1	2 (see note 5)			1
+			2	4 (see note 5)			1
+			3	8				2
+			4	16				2
+			5	32				4
+			6	EHB 64 (see note 3)		4
+			6	HAM 4096 (see note 4)		4
+			6	64				4
+			7	128				4
+			8	256				4
+			8 	HAM	256,000+ (see note 2)	4
+
+VGA  (160,320,640x480 non-int.)
+			1	2 (see note 5)			1
+			2	4 (see note 5)			1
+			3	8				2
+			4	16				2
+			5	32				4
+			6 	EHB 64 (see note 3)		4
+			6 	HAM 4096 (see note 4)		4
+			6	64				4
+			7	128				4
+			8	256				4
+			8 	HAM 256,000+ (see note 2)	4
+
+Notes:
+1 - The "Bandwidth" number describes the amount of fetch bandwidth required
+by a particular screen mode.  For example, a 5 bit deep VGA screen requires
+the 4x bandwidth fetch mode while a 1 bit VGA screen requires only the 1x
+mode..  This translates to the hardware having to move data 4 times faster.
+To be able to move data at these higher rates, the higher bandwidth modes
+require data to be properly aligned in CHIP memory that is fast enough to
+support the bandwidth.  Specifically, bandwidth fetch mode factors of 1
+require data to be on 16 bit boundaries, factors of 2 require 32 bit
+boundaries, and factors of 4 require 64 bit boundaries.  Restrictions like
+these are the best reason to use the system allocation functions whenever
+data is being prepared for the custom hardware.  It is not guaranteed that
+all machines that have the new chipset will also have memory fast enough
+for the 4x modes.  Therefore, the ONLY way to know whether or not the
+machine will support the mode you want is to check the Display Database.
+
+2 - New 8 bit HAM mode uses the upper 6 bits for 64 24-bit base register
+colors or as a 6 bit modify value, plus the lower 2 bits for 18 bit hold or
+modify mode control.  This mode could conceivably allow simultaneous
+display of more than 256,000 colors (up to 16.8 million, presuming a
+monitor / screenmode with enough pixels.)  Please note that while the
+register planes and control planes are internally reversed in 8 bit HAM
+(the control bits are the two LSBs instead of the two MSBs),  programs
+using graphics.library and intuition.library (i.e. Screens, BitMaps)
+will not have to deal with this reversal, as it will be handled
+automatically for them.
+
+3 - This is like the original EHB mode, but in new resolutions.  It uses 5
+bits to yield 32 register colors, plus a sixth bit for 32 colors that are
+1/2 as bright.
+
+4 - This is like the original 6 bit Ham mode, but in new resolutions.  It
+uses the lower 4 bits for 16 register colors, plus the upper 2 bits for
+modify mode control.  This mode allows  simultaneous display of 4096
+colors.
+
+5 - These modes are unlike the old VGA and SUPERHIRES modes in that they
+are not restricted to a nonstandard 64 color palette.
+

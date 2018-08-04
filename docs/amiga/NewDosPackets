@@ -1,0 +1,56 @@
+
+			New V39 DOS Packets
+                        ===================
+
+ACTION_EXAMINE_ALL_END: takes the same arguments as EXAMINE_ALL, same returns
+(though it shouldn't indicate that there's more to do).
+
+ACTION_SET_OWNER: same as ACTION_PROTECT, except the data is a longword of
+owner info: high 16 bits are GID (group), low 16 are UID (user id).
+
+ACTION_SERIALIZE_DISK: Takes no parameters, makes the FS change the disk to
+make it unique (normally by changing the creation date).  Useful in
+diskcopy with non-amiga filesystems (diskcopy knows about amiga filesystems
+and can do it without the packet for them).  Normal sorts of return codes.
+
+>- There is some confusion about ACTION_CURRENT_VOLUME.
+>  According to some docs this packet does not take any arguments
+>  and returns a BPTR to the _current_ volume node in Arg1.
+>  However years ago computer magazines reported that this information
+>  is incorrect, and that the packet takes fh->fh_Arg1 from a
+>  filehandle in Arg1 and returns the volume node _corresponding
+>  to that filehandle_ in Res1 and its exec unit number in Res2.
+>  I'd like to know who is right...
+
+	In a way, both are correct.  If arg1 is NULL, that it returns the
+current volume and unit number.  If arg1 is fh_Arg1 of a filehandle, it
+returns the volume and unit for that filehandle.  Good find, I didn't realize
+that description was wrong (almost nothing uses ACTION_CURRENT_VOLUME, except
+some error reporting code in dos).
+
+******
+
+>- From your experience with the Amiga filesystem: Assuming
+>  a process asynchronously sends two packets to the FS that
+>  refer to the same file, but have to be executed in sequence,
+>  e.g. two CMD_READ requests to the same file. A multithreaded
+>  FS might try to execute them in parallel. Is it necessary to
+>  serialize two packets that come from the same process within the
+>  FileSystem somehow, or are user processes just not expected to
+>  do "that kind of thing" ?
+
+	It's quite necessary to serialize them.  Martin's (vertex's) async
+IO code does that, and has been made available to a lot of developers.
+
+	You might even find it necessary (or at least a good idea) to
+serialize access via any one filehandle, and ignore the task part of it.
+It's rare for two processes to use one filehandle, and if they are, they're
+probably cooperating and may depend on ordering.
+
+	BTW, the Amiga FS _is_ multithreaded...  Admittedly it's BCPL
+coroutine threading, but it is threaded.  Each filehandle has a separate
+coroutine to handle IO's for the FH, with a 1K stack.
+
+	Randell
+
+

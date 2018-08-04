@@ -1,0 +1,692 @@
+			Overview of V39 Graphics
+
+  (c) Copyright 1992-93 Commodore-Amiga, Inc.  All Rights Reserved
+
+The Advanced Amiga Chip set (AA) redefines graphics performance on the
+Amiga  by adding many new display modes, new features and more color to
+the Amiga  platform. This article presents an overview of how the new
+V39 graphics  library has implemented theses new features in the system
+software.
+
+In V39, the graphics library has changed in the following areas:
+
+   o  Support for new AA display modes
+   o  Double buffering
+   o  Retargettable sprite and screen (ViewPort) functions
+   o  Palette sharing
+   o  Bitmap functions
+   o  Interleaved BitMaps
+   o  Display mode promotion, coercion and selection
+   o  RTG compatible RastPort functions.
+
+The original Amiga graphics library exposed many device-dependent
+details to the application programmer.  Because of this, introduction
+of new graphics devices has been slowed, and application support of new
+features has been delayed.  To reverse this trend, no features have
+been added to the new graphics system which cannot be kept for the
+future.  Thus, when newer graphics systems are introduced, system
+software will need fewer changes, and applications will be ready to
+automatically use new capabilities.  Thus, parameters such as number
+of bits per pixel, resolution, color palette size, etc., are either
+variable  or have been made very large.
+
+
+Compatibility
+=============
+
+The AA chips are register level compatible with the old and ECS chips
+at boot  up time. However, when new AA modes are enabled and displayed,
+and a game then takes over the screen display without informing the OS
+of it, some registers may be in incompatible settings.
+
+Two approaches will reduce this:
+
+    1)  Old Programs which boot with their own custom boot block
+(games) will have AA features disabled unless they are specifically
+asked for.  This should ensure transparent compatibility for all
+bootable games.
+
+    2)  It will be possible to disable AA features for non-compatible
+programs.  This will be  done via the "BootMenu" which is available at
+system boot time. New options in this menu will allow disabling of AA,
+disabling of ECS, and switching of PAL and NTSC.
+
+For bootable games that want AA features, use the V39 graphics function
+SetChipRev().  This lets you upgrade the Amiga to be any chip revision
+you  need, and handles the extra house-keeping that graphics needs to
+operate the  selected chipset (such as updating the graphics database).
+The only  restriction is that it is not possible to downgrade the
+setting from AA  down to ECS or A.
+
+
+Get/Set Functions
+=================
+
+This release of graphics.library will attempt to ease the (future)
+transition to Retargetable Graphics.  New functions are provided to do
+some operations in a more device-independent manner.  This will help
+when we have to support foreign graphics devices, more than 8 bits per
+pixel, chunky pixels, and true-color displays.
+
+These new "Get/Set" functions will allow device independent access to
+fields in the RastPort structure which were only previously manipulable
+by direct structure access.
+
+
+VOID  SetAPen(rp, pen)   Sets the current APen value
+ULONG GetAPen(rp)        Return current APen value
+VOID  SetBPen(rp, pen)   Sets the current BPen value
+ULONG GetBPen(rp)        Return current BPen value
+VOID  SetDrMd(rp, mode)  Sets the current DrawMode
+ULONG GetDrMd(rp)        Return current DrawMode
+VOID  SetOPen(rp,c)      Was a macro. Now use the SetOutlinePen()
+                         function, or the SafeSetOutlinePen() macro.
+ULONG GetOPen(rp)        Return current area outline pen
+VOID  SetWrMsk(rp,m)     Was a macro. Now use the SetWriteMask()
+                         function, or the SafeSetWriteMask() macro.
+ULONG GetWrMsk(rp)       Description of this function is left as an
+                         exercise for the reader.
+
+VOID  SetABPenDrMd(rp,apen,bpen,drmd)
+         Sets the APen, BPen, and DrawMode for a RastPort. Faster than
+separate calls.
+
+VOID  SetRPAttr(rp,taglist)
+         You asked for it so here it is. Lets you set many of the
+RastPort attributes with one tag-based call. Here are the attributes
+currently supported:
+
+       RPTAG_Font        Font for Text() RPTAG_SoftStyle style for text
+                         (see graphics/text.h)
+       RPTAG_APen        Primary rendering pen
+       RPTAG_BPen        Secondary rendering pen
+       RPTAG_DrMd        Drawing mode (see graphics/rastport.h)
+       RPTAG_OutLinePen  Area Outline pen
+       RPTAG_WriteMask   Bit Mask for writing.
+       RPTAG_MaxPen      Maximum pen to render (see SetMaxPen())
+
+
+VOID GetRPAttr(rp, taglist)
+        No prizes for guessing what this does. It supports the extra
+tag RPTAG_DrawBounds. This tag is passed with a pointer to a rectangle
+structure. The returned rectangle structure will contain the bounds of
+the clipping regions inside the RastPort. This can be used to optimize
+drawing and refresh.
+
+
+Color Map Functions
+===================
+
+The color palette in AA is different in a lot of ways from the ECS one:
+
+   o  It has 24 bits per entry, plus one bit to select transparency.
+   o  There are 256 entries which is enough for many programs running
+on the same screen to share the palette.
+
+All colors are now specified as 32 bit left-justified fractions, and
+are truncated based upon the number of bits that the hardware is
+capable of displaying.
+
+There are now ...RGB32() functions to replace the ...RGB4() functions.
+These all work in 32-bits per gun, irrespective of the device the
+colors are intended for. Devices that cannot handle the color
+resolutions will truncate the colors to the most significant n bits.
+That is why it is important to duplicate the most significant n bits
+throughout the 32-bit resolution. For example, pure white should be
+treated as:
+
+         R = 0xffffffff, G = 0xffffffff, B = 0xffffffff
+
+and not
+
+         R = 0xf0000000, G = 0xf0000000, B = 0xf0000000
+
+The new color palette functions allow for multiple applications to
+coordinate their access to the palette.  This allows applications to,
+for instance, dynamically remap pictures to match the color palette of
+the Workbench screen, display animations in windows, etc.
+
+ObtainPen() will attempt to obtain a free palette entry for use by your
+program, and then set the pen number to the RGB value you specify. A
+pen can be either shared or exclusively for your own use. If shared,
+then you should not modify the RGB value of the pen once the pen is
+obtained, because other applications may use that same pen, and will be
+relying on its color.
+
+ObtainBestPen() is a tag-based function that will attempt to find the
+pen in the ColorMap which is closest to the specified RGB value, and
+then return a shared pen to you. There are (currently) four levels of
+precision to which the RGB value must match. PRECISION_EXACT asks for
+an exact match of the RGB value. The other three are, in descending
+order of precision, PRECISION_IMAGE, PRECISION_ICON, and PRECISION_GUI.
+If there is no pen in the ColorMap with the required RGB value to the
+specified precision, and there are unallocated pens, then a new pen is
+reserved as shared, and its RGB value set to the value you requested.
+
+Note, there is no way to physically stop you from changing the colors
+of shared pens, but it's just not done, so don't do it.  Pens obtained
+either with ObtainPen() or ObtainBestPen() should be released back to
+the system with ReleasePen() when no longer used.
+
+All the palette-sharing functions require a struct PalExtra to be
+attached to the ColorMap. This is done automatically for all Intuition
+screens, but if you are not using Intuition, then you will need to call
+AttachPalExtra() yourself. This allocates and attaches a PalExtra
+structure to the ColorMap. The PalExtra is deallocated by the
+FreeColorMap() function.
+
+FindColor(cm,r,g,b,maxcolor) lets an application find the "closest"
+color to a given RGB value, independently of palette sharing. In fact,
+using SetRGB32CM and FindColor, you can perform color matching which is
+not associated with a display at all.
+
+
+Bitmap Functions
+================
+
+These function exist because the new AA chips have alignment
+restrictions in high bandwidth modes.  Changing InitBitMap() and
+AllocRaster() to obey these restrictions would have been very
+incompatible.  Bitmaps created by AllocRaster with a multiple of 32 or
+64 pixels per line will be compatible with high fetch modes (2x or 4x
+respectively). Incompatible ones will fall back to 1x mode, if 1x mode
+is capable of displaying the screen.
+
+AllocBitMap() allocates an entire bitmap structure, and the display
+memory for it. AllocBitMap() allows you to use more than 8 planes, and
+also allows you to specify another bitmap pointer, thus telling the
+system to allocate the bitmap to be "like" another bitmap.  A bitmap
+allocated in such a matter may be able to blit to this bitmap faster.
+Such a bitmap may be stored in a foreign device's local memory.  Do not
+assume anything about the structure of a bitmap allocated in this
+manner.  The size of a bitmap structure is subject to change in future
+graphics releases.  Thus, you should use AllocBitMap()/FreeBitMap() for
+your raster allocation.
+
+
+Sprite Functions
+================
+
+Graphics sprite functions (MoveSprite()) have been extended to
+understand large sprites, selectable sprite pixel resolution, and
+movement of scan-doubled sprites. Sprite positioning is no longer
+rounded down to lo-res pixel resolution.  Applications will no longer
+have to "know" about the hardware-dependent format of sprite data.
+
+The new sprite functions work with an ExtSprite structure, which is
+obtained with the tag-based AllocSpriteData() function. This function
+allows you to specify a BitMap for the image of the sprite, and tags to
+specify scaling factors to apply to the BitMap. The returned ExtSprite
+structure is then passed to GetExtSprite(), which is the V39 equivalent
+of the old GetSprite() function. There is no equivalent FreeExtSprite(0
+function; FreeSprite() does the trick. The ExtSprite allocated with
+AllocSpriteData() is freed with FreeSpriteData().
+
+The AA chip set imposes some limitations on sprites:
+
+   o  All sprites in a ViewPort will be of the same resolution and
+width. There is no individual sprite resolution/width control. If the
+sprite you allocate is of a different width than Intuition's pointer,
+then Intuition is notified, and takes the appropriate steps to maintain
+the pointer imagery.
+
+   o  In the programmable beam modes (namely Multiscan, Euro72,
+DblNTSC, DblPAL, and Super72), only sprite 0 is likely to be available;
+the other sprites are lost to bitplane DMA. MakeVPort() has code that
+detects which sprites have been reserved (with GetSprite() or
+GetExtSprite()), and if possible, will drop the display bandwidth. This
+will make available more DMA to the lower numbered sprites, at the
+expense of more bitplane DMA access. MakeVPort() will not drop the
+bandwidth if doing so would cause the loss of bitplanes in the display,
+so this is not always guaranteed to work for you.
+
+All the AA sprite features are available through new tags for
+VideoControl():
+
+VTAG_SPEVEN_BASE_SET/GET
+      This sets the base color number of the even numbered sprites. The
+AA chip set allows  odd numbered and even numbered sprites to use the
+colors of different 16-color banks, as    opposed to the previous chip
+sets where all sprites used colours 16-31. Legal values to set the base
+are 0-255, but will be rounded down to the nearest multiple of  16.
+
+VTAG_SPODD_BASE_SET/GET
+      As VTAG_SPEVEN_BASE_SET/GET, only for the odd numbered sprites.
+For example, if the following tag list is passed to VideoControl():
+
+      struct TagItem[] = { {VTAG_SPEVEN_BASE_SET, 32},
+                           {VTAG_SPODD_BASE_SET, 144}, {TAG_DONE}, };
+
+then the sprites use the following colors:
+
+        Sprite          Colors
+           0               32 (transparent), 33,34,35
+           2               36 (transparent), 37,38,39
+           4               40 (transparent), 41,42,43
+           6               44 (transparent), 45,46,47
+
+           1               144 (transparent), 145,146,147
+           3               148 (transparent), 149,150,151
+           5               152 (transparent), 153,154,155
+           7               156 (transparent), 157,158,159
+
+[Attached sprites use the palette settings of the odd numbered sprites.]
+
+Normally, there are only (2 << depth) colours in a ColorMap (with the
+exception that Intuition screens always have a minimum of 32 colours).
+If you wish to set the sprite's colors to use pens that are outside of
+this range, then you should use the VTAG_FULLPALETTE_SET tag, which
+specifies that the ColorMap should contain entries for all possible
+colors (256). Therefore, the colors of these entries can be set with
+the usual ...RGB32() functions. Not setting VTAG_FULLPALETTE_SET in
+this case may cause unpredictable colors and enforcer hits.
+
+VTAG_SPRITERESN_SET/GET
+      This allows you to set all the sprites in the ViewPort to one of
+5 resolutions.
+
+      SPRITERESN_140NS:    All sprites have 140ns pixels.
+      SPRITERESN_70NS:     All sprites have 70ns pixels.
+      SPRITERESN_35NS:     All sprites have 35ns pixels.
+      SPRITERESN_DEFAULT:  All sprites have the Intuition default
+                           resolution.
+      SPRITERESN_ECS:      Compatible with ECS resolutions; 140ns,
+                           except in 35ns display pixel modes
+                           (SuperHires), where the sprite pixels are
+                           70ns.
+
+VTAG_DEFSPRITERESN_SET/GET
+      For setting the default sprite resolution, as used by
+      SPRITERESN_DEFAULT.
+
+VTAG_BORDERSPRITE_SET/GET/CLR:
+      This sets the bordersprite option in the AA chipset for the
+ViewPort, which allows sprites to appear in the borders outside of the
+normal display window (DisplayClip), i.e., the area that is normally
+color 0. However, this does not apply to the horizontal blanking area.
+
+VTAG_PF1_TO_SPRITEPRI_SET/GET:
+      All revisions of the Amiga chips have allowed the priorities of
+sprites to playfield to be set. Usually, the priority is such that the
+sprites always appear in front of the playfield.  There is an entry in
+the ViewPort structure for altering this priority, but V39 provides
+this tag in preference to writing to the ViewPort structure.
+
+VTAG_PF2_TO_SPRITEPRI_SET/GET:
+      As VTAG_PF1_TO_SPRITEPRI_SET/GET, only for playfield 2.  On the
+Amiga, playfield 2 is the default playfield, and playfield 1 is only
+used in DualPlayfield modes!
+
+
+Display Mode IDs and the Graphics Database
+==========================================
+
+The graphics database has been extended where necessary for AA
+information, and these changes are limited to the DisplayInfo
+structure. The DisplayInfo->PaletteRange is only one WORD long, which
+is insufficient for the AA 24-bit colour resolution, and so has been
+superceded by three new entries called RedBits, BlueBits and GreenBits.
+These are one BYTE each, and show how many bits of precision is
+available for each colour gun. 255 bits each for red, green and blue
+should be enough for the foreseeable future (pun intended).
+
+Some new DIPF_IS flags were added to the database, providing more
+information about each display mode ID.
+
+DIPF_IS_SPRITES_ATT
+      shows the mode supports attached sprites. The 35ns display modes
+on ECS could not support them.
+
+DIPF_IS_SPRITES_CHNG_RES
+      shows that the mode supports sprites that can change resolution,
+and so the VTAG_SPRITERESN_SET VideoControl() tag will work on
+ViewPorts in this mode.
+
+DIPF_IS_SPRITES_BORDER
+      shows that this mode supports border sprites, so the
+VTAG_BORDERSPRITE_SET VideoControl() tag will work on ViewPorts in this
+mode.
+
+DIPF_IS_SCANDBL
+      shows that this mode is scandoubled (each display line is
+repeated once), so that half as many lines take up the same physical
+area on the monitor. There should be no need for you to look at this
+bit.
+
+DIPF_IS_SPRITES_CHNG_BASE
+      shows that this mode supports sprite base colour offset changing,
+so that the VTAG_SPODD/SPEVEN_BASE_SET VideoControl() tag will work on
+ViewPorts in this mode.
+
+DIPF_IS_SPRITES_CHNG_PRI
+      shows that this mode supports changing the playfield to sprite
+priority, so that the VTAG_PF2/PF1_TO_SPRITEPRI_SET VideoControl() tag
+will work on ViewPorts in this mode.
+
+DIPF_IS_DBUFFER
+      shows that this mode will work with the double-buffering Chan
+geVPBitMap() function. You should check this flag before using the
+double-bufferi ng functions on the ViewPort.
+
+DIPF_IS_PROGBEAM
+      shows that this mode is a programmed beam-sync mode.
+
+DIPF_IS_FOREIGN
+      shows that this mode is not native to the Amiga chip set.
+Currently, no mode IDs will have this flag set, but under RTG many 3rd
+party display devices will. You may want to start checking for this
+flag now.
+
+With the plethora of new display modes that are available under V38 and
+V39,  it is now becoming harder and harder for both the application
+writer and the  end user to know which display mode ID they need to
+use. This will be  especially true under RTG when the application
+writer will have no way of  knowing all the possible display mode IDs
+that are available on third party  display devices. A function was
+added for V39 to alleviate this problem, and  provide a means by which
+the system can calculate the best mode ID to use  given a number of
+requirements, called BestModeID(). It takes the following tags:
+
+BIDTAG_DIPFMustHave
+       The DIPF_ flags that this display mode ID must have set. Default
+is NULL, so there is no preference.
+
+BIDTAG_DIPFMustNotHave
+       The DIPF_ flags that this display mode ID must not have set. For
+example, you may wish to ensure that only native Amiga modes are
+considered, so use BIDTAG_DIPFMustNotHave with DIPF_IS_FOREIGN.  The
+default value is defined as SPECIAL_FLAGS, which is (DIPF_IS_DUALPF |
+DIPF_IS_PF2PRI | DIPF_IS_HAM | DIPF_IS_EXTRAHALFBRITE) so you may need
+to OR your particular requirements with SPECIAL_FLAGS.
+
+BIDTAG_ViewPort
+       An initializes ViewPort for which a mode ID is sought. For
+example, to find an interlaced version of a ViewPort:
+
+         ID = BestModeID( BIDTAG_ViewPort, ThisViewPort,
+                          BIDTAG_MustHave, DIPF_IS_LACE, TAG_END);
+
+BIDTAG_NominalWidth BIDTAG_NominalHeight
+       Together make up the aspect ratio of the desired mode ID. If
+specified, will override the Width and Height of the ViewPort passed in
+BIDTAG_ViewPort, or the NominalDimensionInfo of the ID passed in
+BIDTAG_SourceID. Defaults to 640x200.
+
+BIDTAG_DesiredWidth BIDTAG_DesiredHeight
+       Nominal width and height of the returned mode ID.
+
+BIDTAG_Depth
+       Mode ID must support at least this many bitplanes. Defaults to
+vp->RasInfo-> BitMap->Depth of the ViewPort passed in BIDTAG_ViewPort,
+or 1.
+
+BIDTAG_MonitorID
+       The returned mode ID must belong to this monitor family.
+BIDTAG_SourceID
+       BestModeID() will use characteristics of this mode ID, and
+override some of the characteristics with the other values in the
+taglist.
+
+BIDTAG_RedBits BIDTAG_BlueBits BIDTAG_GreenBits
+       The mode ID must support at least these many bits for each color
+gun.  Defaults to 4 bits each, so A2024 modes will not be considered.
+
+As an example of its use, here is a portion of the code for the V39
+CoerceMode() function (which is used by Intuition when coercing
+screens):
+
+ULONG CoerceMode(struct ViewPort *vp, ULONG MonitorID, ULONG Flags) {
+...
+        /* Coerce the ViewPort vp to the best fit ModeID in the monitor
+         * MonitorID.
+         */
+        must = NULL;
+        mustnot = SPECIAL_FLAGS;
+        tag[t].ti_Tag = BIDTAG_ViewPort;
+        tag[t++].ti_Data = vp;
+        tag[t].ti_Tag = BIDTAG_MonitorID;
+        tag[t++].ti_Data = MonitorID;
+
+        if (GetDisplayInfoData(NULL, (APTR)&dinfo,
+                           sizeof(struct DisplayInfo), DTAG_DISP, ID))
+        {
+            must = (dinfo.PropertyFlags & SPECIAL_FLAGS);
+            mustnot = (SPECIAL_FLAGS & ~must);
+            if ((Flags & AVOID_FLICKER) && (!(dinfo.PropertyFlags &
+						DIPF_IS_LACE)))
+                {
+                 /* we don't want lace if AVOID_FLICKER is set,
+                  * and this ViewPort is not naturally laced.
+                  */
+                mustnot |= DIPF_IS_LACE;
+                }
+
+                tag[t].ti_Tag = BIDTAG_RedBits;
+                tag[t++].ti_Data = dinfo.RedBits;
+                tag[t].ti_Tag = BIDTAG_GreenBits;
+                tag[t++].ti_Data = dinfo.GreenBits;
+                tag[t].ti_Tag = BIDTAG_BlueBits;
+                tag[t++].ti_Data = dinfo.BlueBits;
+        }
+
+        tag[t].ti_Tag = BIDTAG_DIPFMustNotHave;
+        tag[t++].ti_Data = mustnot;
+        tag[t].ti_Tag = BIDTAG_DIPFMustHave;
+        tag[t++].ti_Data = must;
+        tag[t].ti_Tag = TAG_DONE;
+
+        return(BestModeIDA(tag));
+}
+
+As another example, consider an IFF display program with a HAM image,
+to be displayed in the same monitor type as the Workbench ViewPort.
+
+ID = BestModeID(BIDTAG_NominalWidth, IFFImage->Width,
+                BIDTAG_NominalHeight, IFFImage->Height,
+                BIDTAG_Depth, IFFImage->Depth,
+                BIDTAG_DIPFMustHave, DIPF_IS_AM,
+                BIDTAG_MonitorID, (GetVPModeID(WbVP) & MONITOR_ID_MASK),
+                TAG_END);
+
+The definitions of the display mode ID keys have been moved from
+<graphics/displayinfo.h> to a new <graphics/modeid.h> file.
+
+The include file <graphics/modeid.h> specifically says that the
+individual  bits of the mode IDs should not be checked for any meaning,
+but that the  database should be read to glean information about the
+mode ID. In order to  maintain compatibility with old software, and
+make the application writer's  job somewhat easier, I am willing to
+guarantee that any mode ID with the bit  0x00000800 set is a HAM mode,
+and any mode ID with the bit 0x00000080 set is  an ExtraHalfBrite mode.
+These are the only bits that are guaranteed to mean  anything in the
+mode ID itself. These bits correspond of course to the HIRES  and
+EXTRA_HALFBRITE definitions in <graphics/view.h>.
+
+
+Display Mode Promotion
+======================
+
+Promotion is a software solution for the lack of hardware deinterlacing
+circuitry on the AA machines. With the promotion feature enabled in
+Icontrol, the default monitor (NTSC on NTSC machines, PAL on PAL
+machines), becomes DblNTSC on NTSC machine and DblPAL on PAL machines.
+There are a number of advantages and gotchas with this approach.
+
+One advantage is that the graphics database is always truthful. Any
+enquiries  about a default monitor mode ID will yield information
+relevant to whatever  the default monitor happens to be at the time.
+This should not be a problem  for any code written for V37 onwards, as
+the default monitor has always been  either NTSC or PAL; now, there are
+just more possibilities.
+
+Another advantage is that V39-aware software that requires NTSC or PAL
+modes (e.g., video titling software), can now get such modes using
+specific NTSC or PAL mode IDs.
+
+Here is a list of "gotchas" (that is, things to watch out for if you
+want display mode promotion to work correctly).
+
+   1) The default monitor is dynamic, and can change at any time.
+Therefore, do not cache any information about the default mode IDs,
+but read them from the  database as you need them.
+   2) There is no equivalent in the Dbl... monitors to the SuperHires
+modes. The database LVOs sniff out SuperHires mode IDs for database
+enquiries, and map SuperHires mode IDs to the equivalent Dbl... Hires
+mode IDs if promotion is enabled.
+   3) Programs that rely on copper timings for UserCopperlists, such as
+SHAM displayers, may no longer work when promoted, because each line is
+shorter in time than the NTSC/PAL line. Therefore, there are less
+coppercycles per line.
+   4) Promoted ViewPorts have less sprites available than non-promoted
+ViewPorts.
+   5) For compatibility, we do not promote 1.3 style custom ViewPorts
+and Views (we check for the presence of a ViewExtra).
+
+
+Miscellaneous
+=============
+
+Interleaved screens have been added.  These use a different layout of
+the graphics data in order to speed rendering operations and eliminate
+the annoying "color-flash" problem which is the hallmark of planar (as
+opposed to "chunky") display architectures. Set the BMF_INTERLEAVED
+flag when calling AllocBitMap().
+
+Double buffering functions have been added.  These allow applications
+to display very smooth, synchronized animation in fully an efficient
+"Intuition-friendly" manner. Call AllocDBufInfo() to allocate and
+initialize the DBufInfo structure, which is then passed to
+ChangeVPBitMap(). The double-buffering functions return up to two
+different types of messages.  The first (dbi_SafeMessage) tells your
+program when it is safe to write to the old BitMap. The second
+(dbi_DispMessage) is sent when it is safe to call ChangeVPBitMap()
+again and be certain the new bitmap has been seen for at least 1 field.
+The autodocs for AllocDBufInfo() has example code showing how to safely
+double buffer with ChangeVPBitMap().
+
+The DBufInfo structure should be freed with the FreeDBufInfo() function.
+
+Due to the extra colours that need to be loaded in deeper AA screens,
+the gap between screens can now be greater than the three lines that
+Intuition traditionally kept.  In fact, the number of lines between
+screens is variable, depending on the screen type and depth.  A new
+function CalcIVG() (CalcInterViewPortGap) has been added to calculate
+the number of lines required by the copper to execute all the copper
+instructions before the display window is opened.  Note however that
+CalcIVG() returns the true number of lines (rounded up to the next
+whole line) needed in ViewPort resolution units, but Intuition still
+maintains a gap of at least three lines between Screens. Therefore,
+when calling CalcIVG() to position screens in an Intuition environment,
+use the result of MAX((laced ?  6 :  3), CalcIVG(v, vp)).
+
+There is one other caveat with respect to CalcIVG().  This function
+works by counting the number of copper instructions in the
+ViewPort->DspIns list, which is set up by MakeVPort().  If an Intuition
+screen is opened behind, then MakeVPort() is not called on that
+screen's ViewPort until it first becomes visible, so calling CalcIVG()
+with that screen's ViewPort will yield a result of 0.
+
+Some operations have been sped up:  RectFill() has been rewritten,
+WritePixel() uses the CPU (3x speedup) ScrollVPort is 10 times faster,
+and other optimizations.
+
+
+Bugs and Anomalies
+==================
+
+There is a big bug in the V37-V39 graphics hash-table code, which is
+used to associate a ViewExtra with a View; namely, only 8 Views can
+have ViewExtras attached to them. This has been fixed in the latest
+SetPatch and Kickstart.
+
+ScrollVPort() and ChangeVPBitMap() have problems with 8-bit HAM mode.
+This has been SetPatch'ed.
+
+Many other outstanding bugs have been fixed for V39.
+
+
+
+Table:  New AA Modes (In Addition to Modes Supported by ECS)
+
+
+Mode			Planes	Colors			Bandwidth (See note 1)
+----			------	------			----------------------
+LORES (320x200)		6	64				1
+			7	128				1
+			8	256				1
+			8	HAM 256,000+ (see note 2)	1
+
+HIRES (640x200)		5	32				2
+			6	EHB 64 (see note 3)		2
+			6	HAM 4096 (see note 4)		2
+			6	64				2
+			7	128				2
+			8	256				2
+			8	HAM 256,000+ (see note 2)	2
+
+SUPERHIRES (1280x200)
+			1	2 (see note 5)			1
+			2	4 (see note 5)			1
+			3	8				2
+			4	16				2
+			5	32				4
+			6	EHB 64 (see note 3)		4
+			6	HAM 4096 (see note 4)		4
+			6	64				4
+			7	128				4
+			8	256				4
+			8 	HAM	256,000+ (see note 2)	4
+
+VGA  (160,320,640x480 non-int.)
+			1	2 (see note 5)			1
+			2	4 (see note 5)			1
+			3	8				2
+			4	16				2
+			5	32				4
+			6 	EHB 64 (see note 3)		4
+			6 	HAM 4096 (see note 4)		4
+			6	64				4
+			7	128				4
+			8	256				4
+			8 	HAM 256,000+ (see note 2)	4
+
+Notes:
+1 - The "Bandwidth" number describes the amount of fetch bandwidth required
+by a particular screen mode.  For example, a 5 bit deep VGA screen requires
+the 4x bandwidth fetch mode while a 1 bit VGA screen requires only the 1x
+mode..  This translates to the hardware having to move data 4 times faster.
+To be able to move data at these higher rates, the higher bandwidth modes
+require data to be properly aligned in CHIP memory that is fast enough to
+support the bandwidth.  Specifically, bandwidth fetch mode factors of 1
+require data to be on 16 bit boundaries, factors of 2 require 32 bit
+boundaries, and factors of 4 require 64 bit boundaries.  Restrictions like
+these are the best reason to use the system allocation functions whenever
+data is being prepared for the custom hardware.  It is not guaranteed that
+all machines that have the new chipset will also have memory fast enough
+for the 4x modes.  Therefore, the ONLY way to know whether or not the
+machine will support the mode you want is to check the Display Database.
+
+2 - New 8 bit HAM mode uses the upper 6 bits for 64 24-bit base register
+colors or as a 6 bit modify value, plus the lower 2 bits for 18 bit hold or
+modify mode control.  This mode could conceivably allow simultaneous
+display of more than 256,000 colors (up to 16.8 million, presuming a
+monitor / screenmode with enough pixels.)  Please note that while the
+register planes and control planes are internally reversed in 8 bit HAM
+(the control bits are the two LSBs instead of the two MSBs),  programs
+using graphics.library and intuition.library (i.e. Screens, BitMaps)
+will not have to deal with this reversal, as it will be handled
+automatically for them.
+
+3 - This is like the original EHB mode, but in new resolutions.  It uses 5
+bits to yield 32 register colors, plus a sixth bit for 32 colors that are
+1/2 as bright.
+
+4 - This is like the original 6 bit Ham mode, but in new resolutions.  It
+uses the lower 4 bits for 16 register colors, plus the upper 2 bits for
+modify mode control.  This mode allows  simultaneous display of 4096
+colors.
+
+5 - These modes are unlike the old VGA and SUPERHIRES modes in that they
+are not restricted to a nonstandard 64 color palette.
+
+

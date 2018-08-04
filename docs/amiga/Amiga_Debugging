@@ -1,0 +1,1034 @@
+
+                      Using Amiga Debugging Tools
+                      ===========================
+
+    (c) Copyright 1991-93 Commodore-Amiga, Inc. All Rights Reserved
+
+
+Have you ever experienced any of the following problems with software ?
+
+The software runs well on your system but some others report it
+   has problems on their systems.
+The software runs well by itself but has problems running with
+   or after other software.
+The software runs well most of the time but occasionally crashes
+   or fails for no apparent reason.
+
+You can find and eliminate many of these types of hidden software problems
+by running Amiga debugging and stressing tools while developing and
+testing your product.
+Hidden and obvious software problems are often caused by use of null
+pointers, uninitialized pointers, improperly initialized structures,
+improper use of IO requests, improper abort code, improper memory usage,
+or overwriting of memory allocations.
+By using Enforcer, Mungwall, IO_Torture, Scratch, Memoration, and other
+Amiga debugging and testing tools, you can catch most of these problems
+before you ship a product.
+In fact, many companies now require that all of their inhouse
+software pass at least Enforcer and Mungwall testing, and have also added
+this requirement to their contracts for outside development.
+Many other CATS tools such as Devmon, Owner, and LVO can help to pinpoint
+the causes of problems.  You have these tools.  Here are hints on how to
+use them, when to use them, and how to get the most from their output.
+
+
+Enforcer and Mungwall
+=====================
+
+Enforcer and Mungwall are the top two bug finding and bug prevention tools.
+Enforcer is an MMU-based debugging tool by Michael Sinz, based on an earlier
+tool by Bryce Nesbitt.  An MMU is a memory management unit which can be
+configured to trap accesses to specified ranges of memory.  The 68030 and
+68040 processors have a built-in MMU, and most 68020 boards contain a
+separate MMU.  Because it is MMU-based, Enforcer can trap reads and writes
+of low memory and non-existent memory the instant these accesses
+(also known as "Enforcer hits") occur.  This allows you to catch usage of
+null pointers and some uninitialized pointers in your program, and even
+accesses which would have trashed low memory or otherwise crashed the system.
+
+Some of these accesses may seem harmless on your system (such as reads of
+address 0) but could cause your program to fail in the field.  If you are
+developing commercial software (or any software that you plan to distribute)
+it is extremely important that you invest in a MMU, or at the very least
+make sure that your software is tested on machines with an MMU, Enforcer,
+and Mungwall.  As more of the development community begins running these
+tools, software that is unusable in their presence will simply not be used.
+
+The main differences between the new Enforcer and the previous Enforcers
+is that the new Enforcer also works with 68040 processors and has a wide
+variety of output options built in.  In addition, due to the variety of
+output options, the new Enforcer must be RUN.  The new Enforcer requires
+at least V37 OS, so if you need to run Enforcer on a 1.3 machine, you must
+use the older Enforcer 2.8b which we have renamed "Enforcer1.3".
+The current Enforcer comes with an important new tool called SegTracker.
+Enforcer and other debugging tools now take advantage of SegTracker
+to provide a way to report seglist name, hunk, and offset for addresses
+within ANY loaded code.  Full docs on Enforcer and SegTracker are provided
+in Enforcer.doc.
+
+Enforcer is even more powerful when used in combination with Mungwall.
+Mungwall is a combination memory munging tool by Ewout Walraven which
+is based on Memmung by Bryce Nesbitt and Memwall by Randell Jesup.
+The "mung" part of Mungwall fills all of free memory (and all subsequently
+freed memory) with a nasty odd 32-bit values like $DEADF00D.  Such a values
+are almost guaranteed to cause serious problems for any program that uses
+uninitialized pointers or structures, or uses memory or allocations after
+they are freed.  Such usages can occur, for example, when allocations are
+not freed in the correct order.
+
+Mungwall uses a few different nasty 32-bit values in its memory munging
+to help you diagnose any problems.
+
+ - Except when Enforcer is running, location 0 is set to $C0DEDBAD
+   so that programs referencing location zero will not find a value.
+   Programs referencing location 0 as a string will get a string of
+   high ASCII characters rather than a null string, and programs
+   using null structure pointers should be irritated into crashing.
+   When Enforcer is running, this is not necessary because with location
+   0 containing 0, Enforcer can trap these low memory accesses by itself.
+
+ - On startup all free memory is munged with $ABADCAFE. If this number
+   shows up, someone is referencing memory in the free list.
+
+ - Except when MEMF_CLEAR is set, memory is pre-munged on allocation with
+   $DEADFOOD. When this is seen in an Enforcer report, the caller is
+   allocating memory and doesn't initialize it before using it.
+
+ - Memory is filled with $DEADBEEF when it is deallocated, encouraging
+   programs reusing freed memory to crash or get Enforcer hits.
+
+
+The "wall" part of Mungwall allocates extra memory before and after
+every memory allocation and fills this "wall" with a fill pattern and
+other information.  On each de-allocation, Mungwall checks to make sure
+that the deallocation size matches the size of the allocation, and checks
+to make sure that the walls have not been overwritten.  Mungwall also
+watches for 0-size allocations, 0-size deallocations, and 0-address
+deallocations.
+
+Mungwall checks for incorrect allocations (such as 0 size) during AllocMem,
+and checks for incorrect deallocations or trashing around allocations
+during FreeMem.  If trashing or incorrect deallocation is detected,
+Mungwall will both report it and refuse to free the memory.  These reports
+are all known as "Mungwall hits".
+
+The latest Mungwall can also optionally report on failed allocations
+with the SHOWFAIL option.  In addition, Mungwall has an option
+to "snoop" and report on all memory allocations and deallocations
+for all tasks or specified tasks.  This can be useful when tracking
+down memory losses.  The sometimes voluminous snoop output can be run
+through the snoopstrip program which will throw away all matching
+allocation/deallocation pairs.
+
+Another useful recently added Mungwall feature is the NAMETAG option.
+When this option is active, Mungwall will tag all memory allocations with
+the first 16 characters of the name of the task, process, or command
+that allocated the memory.  A program called Munglist can then
+do its best to show the names of the allocators of currently allocated
+pieces of memory.  This can be very useful in tracking down memory losses.
+However, keep in mind that some of an application's allocations
+may be done by a different system task (for example, if an application
+opens a file, a file handle or buffers may be allocated by the process
+for the disk volume).
+
+The current Mungwall makes use of SegTracker, if running, to report
+the seglist, hunk, and offset of hit addresses in any loaded code.
+If neither possible PC (A: and C: PC) is within loaded code,
+Mungwall will check on the stack to see if it can find some address
+within loaded code.  For more information, see the MUNGWALL OUTPUT
+section later, and also Mungwall.doc.
+
+Mungwall may be used without Enforcer and on non-MMU machines.
+If you don't have an MMU, at least test with Mungwall alone.
+If you are using uninitialized memory or memory after it is freed,
+Mungwall should help to crash you immediately (as you might crash on
+a user's machine when he runs other programs at the same time as yours).
+Mungwall is more pleasant when used with Enforcer however, since it will
+generally incite an Enforcer hit when memory is misused, rather than a crash.
+
+It is generally not safe or recommended to turn Mungwall off and
+back on without rebooting.  This is because Mungwall recognizes
+its walled allocations by looking for a special value it has placed
+near the beginning of the allocation.  If a program allocates memory while
+Mungwall is running, then frees it while Mungwall is turned off,
+and another program reallocates the some of the same memory while Mungwall
+is turned off, and then tries to deallocate it with Mungwall turned
+back on, Mungwall may generate Mungwall hits due to incorrect data.
+Note that this can also occasionally happen on a soft-reboot if a task
+that starts up and allocates memory before Mungwall is run happens to
+receive a Mungwall-tagged piece of memory that was in use before reboot,
+and then frees the memory after Mungwall is running.  To identify
+such problems, turn your machine off for 15 seconds or so to clear
+memory, turn it back on, and retest.
+
+A useful alternative to turning Mungwall off and on is the Mungwall
+UPDATE feature.  UPDATE allows you to turn on and off many of the
+options of another running copy of Mungwall.  For example, you
+could turn off the MEGASTACK option via Mungwall UPDATE NOMEGASTACK
+or turn on the SHOWFAIL option with Mungwall UPDATE SHOWFAIL.
+
+The latest Mungwall has some additional options for hit display
+(SHOWHUNK, etc.) and also has a TIMESTAMP option for timestamping
+memory allocations.  The timestamps can be useful when using
+"MungList", the memory listing tool that comes with Mungwall.
+
+MungList attempts to list ALL of the allocated pieces of memory
+in the system which have been allocated since Mungwall was started.
+If Mungwall was run with the NAMETAG option, MungList can show the
+name of the program that allocated each piece of memory.  If Mungwall
+was run with the TIMESTAMP option, the MungList SHOWTIME can also
+show the time each piece was allocated.  If SegTracker is running,
+MungList can also attempt to give some hunk and offset information.
+In addition, the new MungList can also REMUNGE and/or CHECK memory.
+In CHECK, MungList attempts to check for wall-trashing of memory
+that is currently allocated, and REMUNGE can re-fill free memory
+with nasty values (memory deallocated under a Forbid can not be
+post-filled by Mungwall at the time of deallocation).  Munglist
+can be told to stay running and REMUNGE and/or CHECK periodically.
+
+
+Debugging Terminals
+===================
+
+Enforcer and Mungwall both output their debugging information
+to the serial port at the baud rate your machine's serial
+hardware is set to.  At powerup, your serial hardware is set
+to 9600 baud, but you can modify this by bringing up a terminal
+package and setting a baud rate.  The optimal debugging setup
+is to connect your Amiga via a null modem serial cable to another
+Amiga or computer running a terminal package with ACSII capture
+capability.  Both Enforcer and Mungwall include CTRL-G's in their output
+to generate a beep with most terminal packages, and the ASCII capture
+capability will allow you to capture all serial debugging
+output to a file for examination.  This is especially useful when
+combined with serial kprintf() (debug.lib) debugging statements in
+your code such as kprintf("About to close window $%lx\n",win).
+
+But some developers don't have a second machine to use as a debugging
+terminal, or may need to debug a serial application which would
+interfere with serial debugging output.
+So two other options exist.  One is to use the parallel
+versions of the debugging tools, and the parallel debugging "dprintf"
+command (from ddebug.lib) and connect a parallel printer for
+the output.  The benefit of serial and parallel debugging is that
+you can get some information out and capture it even if your
+machine is crashing, and even if your application has taken
+over the system.  The other option is "Sushi".
+
+
+Sushi
+=====
+
+For most applications, an option now exists for debugging
+on a single machine.  It's called "Sushi" (a late-night name loosely
+based on the fact that it captures "raw" serial output).
+Sushi captures all raw serial debugging output (such as kprintf,
+new Enforcer with RAWIO option, Mungwall, IO_Torture, etc.)
+and has its AmigaDOS process send the debug information to stdout.
+This means you can redirect Sushi's output to a an AUTO/CON window
+(and the window will pop open if you have any hits), or to a multiserial
+port, etc.  Sushi can also be told to save its circular buffer
+(via CTRL-F signal or via a separate SUSHI SAVEAS FILENAME command),
+or to empty its buffer (CTRL-E signal or a separate SUSHI EMPTY command).
+
+Sushi also can operate in quiet mode, just capturing debugging output,
+and provides a program task signalling interface which allows an external
+application to be written to display the captured debugging output
+(for those of you who want a fancier debugging display program).
+A benefit of Sushi is that fairly voluminous debugging output
+can be used even from within interrupt code or intense task code
+because Sushi only has to place the text bytes in a ram buffer,
+and the actual output is done by a separate process.
+See Sushi.doc for more information and a source for a sample
+external display program.
+
+Sample user-startup:
+
+run >NIL: Mungwall
+run >NIL: Enforcer RAWIO
+run >NIL: sushi <>"CON:0/20/640/100/Sushi CTRL-File CTRL-Empty/AUTO/CLOSE/WAIT" NOPROMPT
+
+
+Debugging printf's: kprintf and dprintf
+=======================================
+When using serial (or parallel) debugging and stress-testing tools,
+it is very useful to have your own program's debugging statements
+(such as "About to do xxx") mixed in with any potential hits
+from the debugging tools.
+In addition, it is very useful to have a printf-like command that
+can be used from within even the low level task or interrupt code.
+A clean way to add conditional debugging statements to a C program
+is to use a MACRO such a D(bug)) by including lines like the following
+in your program.  Set MYDEBUG to 1 to turn on debugging.
+Set bug to printf for printf debugging, or to kprintf (and link with
+debug.lib) for serial debugging, or to dprintf (and link with ddebug.lib)
+for parallel debugging.  The D(bug()) macro is neater in your code
+because it can be indented and you need not surround it with any
+#ifdef directives yourself.  Just be careful to remember to put two
+close paren's at the end of each D(bug()) statement, before the semicolon.
+
+/**********    debug macros     ***********/
+#define MYDEBUG  1
+void kprintf(UBYTE *fmt,...);
+void dprintf(UBYTE *fmt,...);
+#define DEBTIME 0
+#define bug printf
+#if MYDEBUG
+#define D(x) (x); if(DEBTIME>0) Delay(DEBTIME);
+#else
+#define D(x) ;
+#endif /* MYDEBUG */
+/********** end of debug macros **********/
+
+Example macro usage:
+	win = OpenWindow(&mynewwin);
+	D(bug("Opened window at $%lx\n", win));
+
+Note that kprintf and dprintf debugging can be used inside even
+the lowest level task or interrupt code (although you better
+keep output down to a minimum during interrupts!).  The DEBTIME
+(Delay) in the macro above must be 0 however if you are doing
+output from anything other than a Process.
+
+
+Finding the Cause of Enforcer and Mungwall Hits
+===============================================
+By using Enforcer and Mungwall while you are developing your software,
+you can catch problems as soon as they are introduced and greatly
+cut down your debugging time.  It is especially useful to place
+conditional remote debugging statements in your code as you write
+each routine so that they can easily be turned on when a problem occurs.
+You will easily be able to pinpoint the problem area when the kprintf
+(or dprintf) output is intermixed with the Enforcer or Mungwall output.
+The remote debugging commands kprintf and dprintf are avaiable in
+the linker libraries debug.lib (serial) and ddebug.lib (parallel)
+respectively.  These linker libs are supplied with some compilers
+and are also available on Commodore's Native Developer Update disks.
+
+Some people prefer to use a source-level or single-stepping debugger
+in combination with Enforcer and Mungwall when tracking down a
+problem to single-step through their code until the hit occurs.
+A different low-level method of locating Enforcer or Mungwall hits is to
+disassemble program memory where the hit occurred.  If the hit occurred
+in ROM, first try using OWNER to determine ROM subsystem of that address.
+For example, OWNER 0x202442 might return the following on a soft-kicked
+A2500:
+
+Address  - Owner
+--------   -----
+00202442 - in resident module: exec 39.47 (28.8.92)
+
+
+Then use LVO to determine the probable function at that address within
+the subsystem:  LVO exec romaddress=0x202442
+
+Closest to $202442 without going over:
+exec.library  LVO $fe0e -498  OpenResource() jumps to $202358 on this system
+
+(See Owner and LVO section for more information on these tools)
+
+If this does does not give enough clue, try disassembling just before
+other ROM and RAM addresses shown in the Enforcer stack dump line.
+If code is found, these may be application or ROM functions
+which called the routine that generated the hit.
+
+If the hit occurs in RAM code, use various methods to match up the
+disassembly with your own code.  Assembly programmers can just compare
+the disassembly to their source.  Others may wish to take the hex values
+of a sequence of position-independent 68000 instructions near the hit
+(ie. no addresses except for offsets and branches) and do a search for
+this binary pattern in your object modules.  If you find the pattern,
+do a mixed source and object disassembly of that object module (for example,
+with SAS's OMD you could OMD >ram:dump mymodule.o mymodule.c) and then
+look in the output for instructions matching those where the hit occurred.
+NOte that when a hit occurs in a disk-loaded device or library, it is
+currently not possible to determine who owns the code where the hit occurred.
+This is because it is up to the device or library to store its
+seglist wherever it sees fit in its own library or device base.
+If you suspect that your hit is occuring in a disk-loaded library
+or device, you can try searching suspected disk libraries or devices
+for a match of the hex pattern of position-independent code near the hit.
+
+
+Deciphering Enforcer and Mungwall Output
+========================================
+Enforcer and Mungwall provide lots of valuable information to help
+debug your hits.
+
+
+SAMPLE ENFORCER OUTPUT:
+
+Here are two sample Enforcer hits caused by a program called "lawbreaker".
+
+WORD-READ from 00000014                        PC: 0030801E
+USP:  00461990 SR: 0015 SW: 0769  (U0)(F)(D)  TCB: 004181A0
+Data: DDDD0041 DDDD1100 DDDD2200 DDDD3300 DDDD4400 DDDD5500 DDDD6600 DDDD7700
+Addr: AAAA0000 AAAA1100 AAAA2200 AAAA3300 AAAA4400 AAAA5500 00280804 --------
+Stck: 00000009 00000008 00000007 00000006 00000005 00000004 00000003 00000002
+Stck: 00000001 00216B98 00002710 00418B94 D5D5D5D5 D5D5D5D5 D5D5D5D5 D5D5D5D5
+----> 0030801E - "lawbreaker"  Hunk 0000 Offset 00000096
+Name: "Shell Process"  CLI: "lawbreaker"  Hunk 0000 Offset 00000096
+
+LONG-WRITE to  FEEDFACE        data=DDDD0041   PC: 00308030
+USP:  00461990 SR: 0018 SW: 0709  (U0)(F)(-)  TCB: 004181A0
+Data: DDDD0041 DDDD1100 DDDD2200 DDDD3300 DDDD4400 DDDD5500 DDDD6600 DDDD7700
+Addr: AAAA0000 AAAA1100 AAAA2200 AAAA3300 AAAA4400 AAAA5500 00280804 --------
+Stck: 00000009 00000008 00000007 00000006 00000005 00000004 00000003 00000002
+Stck: 00000001 00216B98 00002710 00418B94 D5D5D5D5 D5D5D5D5 D5D5D5D5 D5D5D5D5
+----> 00308030 - "lawbreaker"  Hunk 0000 Offset 000000A8
+Name: "Shell Process"  CLI: "lawbreaker"  Hunk 0000 Offset 000000A8
+
+
+Here is an explanation of the some of the important information:
+
+PC:
+
+Program Counter.  This is the address in memory where the program was
+executing instructions when the hit occured.
+For some kinds of hits this will often be the address of the instruction
+after the hit.  Note that if your program passes a bad pointer
+or an improperly initialized structure to a system ROM routine,
+you may cause ROM code to read or write to an illegal address.
+
+
+TYPE-SIZE from or to (e.g. WORD-READ from 00000014):
+
+This is the type of illegal access and the address where it occurred.
+In the first example, the illegal access occurred at address $14, and
+is specified as a WORD-READ access.
+This means the illegal memory access was an attempt to read a word (2 bytes)
+at address $14.  Low memory accesses are often caused by NULL
+pointers to structures.  If, for example, your code or a ROM routine
+references a structure member at offset $14,
+and what you provided or used a NULL structure pointer, Enforcer will
+pick up a hit at address $14.  Other illegal READ accesses are
+BYTE-READ (generally caused by a bad string pointer), and LONG-READ
+(generally caused by a bad pointer or a bad pointer within a structure).
+An Enforcer hit will ocuur whenever a program attempts to read low memory
+addresses (generally caused by a NULL pointer of some type) or non-existent
+memory addresses (generally caused by an uninitialized pointer).
+When Enforcer catches an illegal READ access, it reports the access
+and prevents the program from reading the address by returning data
+of zero.
+
+On illegal WRITE accesses (i.e. attempts to write to ROM, low memory,
+or non-existent memory) Enforcer will report BYTE-WRITE, WORD-WRITE,
+or LONG-WRITE hits (such as in the second example).  These mean the access
+would have illegally and dangerously written to memory which should not
+be written to, quite possibly causing memory to be trashed.
+WRITE hits can be caused by bad pointers or bad code.
+Fortunately, Enforcer prevents the actual memory trashing
+from occurring, and instead just reports it.  This can allow debugging
+severe low memory trashing problems which would normally crash your
+machine.  In the second example above, the CLI program "lawbreaker"
+tried to write the long value $DDDD0041 to the address $FEEDFACE.
+
+Occasionally you will see an INSTRUCTION access of illegal
+memory meaning the PC (Program Counter) is at an address it has no
+legal reason to be at.  Generally this is caused by trashed code, a trashed
+return address on your stack, or an invalid library base.
+Hint - when an INSTRUCTION Enforcer hit occurs at a negative address,
+it is most often caused by a JSR to an LVO (negative word offset)
+from a NULL library base.  Check the Stack dump lines for a possible
+return address to the code that made the bad library call.
+
+
+"data=xxxxxxxx":
+
+On WRITE hits, Enforcer will show you the data that would have been
+written to the illegal address.
+
+
+Register Dump Lines:
+
+All of the middle Enforcer lines show the contents of the program's
+registers and stack at the time of the hit.  The Data: line shows
+the D registers (D0 though D7).  The Addr: line shows the A registers
+(A0 though A6).  A7 (the Stack register) is shown as USP, and the contents
+of the top of the stack is shown in the Stck: lines (note - more Stck:
+lines are available via a command line option of the new Enforcer).
+The USP line also contains the contains of additional processor status
+registers, and also the address of the Task Control Block (TCB).
+On the same line are symbols which specify whether a Forbid (F) and/or
+a Disable (D) was in effect when the hit occurred.
+
+
+Name and Hunk/Offset:
+
+Examples:
+----> 00308030 - "lawbreaker"  Hunk 0000 Offset 000000A8
+Name: "Shell Process"  CLI: "lawbreaker"  Hunk 0000 Offset 000000A8
+
+The firts line (---->), if present, is seglist name, hunk, and offset
+information found via Enforcer calling SegTracker (to possibly get this,
+you must have started SegTracker prior to the loading of the code where
+the hit occured).  SegTracker can find RAM hit addresses in ANY code
+that was loaded after SegTracker was started.  See Enforcer.doc
+for more information on SegTracker and its programmatic interface.
+Here the information is redundant because the hit occurred in
+the application process's own code.  However, if the hit had occurred,
+for example, inside a routine in a disk-loaded library or device
+called by the application process code, this SegTracker information
+would have been extremely important.
+
+The next line (Name:) shows the task name, and CLI command name (if any)
+of the task or command on whose task context the hit occurred (i.e. the
+program that was executing the code where the hit occurred).
+Even if SegTracker is not running, Enforcer will attempt to provide
+hunk and offset information here if the hit address is within the loaded
+program's own code instructions.
+
+
+
+SAMPLE MUNGWALL OUTPUT
+======================
+
+Here are sample Mungwall hits by a program called "mungwalltest".
+Additional explanation has been added in parentheses below each hit.
+For reference, the arguments for memory functions are AllocMem(size,type)
+and FreeMem(address,size).  The A: and C: addresses are Mungwall's
+guess at the address from which AllocMem was called.  The A: address
+is the address if the caller was assembler code.  The C: address is the
+probable address if the caller was C code, assuming a standard stub.
+Since Mungwall is wedged into the memory allocation functions, it can
+only guess the caller's address based on what is pushed on the stack.
+The "task" address on the first line of a Mungwall hit is the task address
+of the caller.  Mungwall checks for incorrect allocations (such as 0 size)
+during AllocMem, and checks for incorrect deallocations or trashing
+around allocations during FreeMem.  If trashing or incorrect deallocation
+is detected, Mungwall will both report it and refuse to free the memory.
+
+Note that Mungwall has special code to prevent
+trapping the partial (wrong size) deallocations that are performed
+by some version of layers.library.  If any other debugging tools are
+also wedged into AllocMem and FreeMem, Mungwall's A: and C: addresses
+may be thrown off by additional information pushed on the stack, and
+Mungwall will also be unable to screen out any partial layers deallocations
+(which will show up as hits on your task's context).
+
+
+AllocMem(0x0,10000) attempted by `mungwalltest' (task 0x3E08F0)
+  from A:0x3EBB12 C:0x3EF552 SP:0x4559FC
+(means mungwalltest tried to allocate 0 bytes of memory)
+
+
+FreeMem(0x0,16) attempted by `mungwalltest' (task 0x3E08F0)
+  from A:0x3EBB40 C:0x3EF598 SP:0x4559F4
+(mungwalltest tried to free memory it never got - i.e. at address 0)
+
+
+FreeMem(0x2FE7C0,0) attempted by `mungwalltest' (task 0x3E08F0)
+  from A:0x3EBB40 C:0x3EF5A8 SP:0x4559EC
+(mungwalltest tried to free 0 bytes of memory)
+
+
+Mis-aligned FreeMem(0x2FE7C4,16) attempted by `mungwalltest' (task 0x3E08F0)
+  from A:0x3EBB40 C:0x3EF5B6 SP:0x4559E4
+(mungwalltest tried to free memory at an incorrect address)
+
+
+Mismatched FreeMem size 14!
+Original allocation: 16 bytes from A:0x3EBB12 C:0x3EF574 Task 0x3E08F0
+Testing with original size.
+(mungwalltest tried to free a different size from what it allocated)
+
+
+19 byte(s) before allocation at 0x2FE7C0, size 16 were hit!
+>$: BBBBBBBB BBBBBBBB BB536572 6765616E 74277320 50657070 65722000
+(memory before this allocation was trashed; trash shown at right)
+
+
+8 byte(s) after allocation at 0x2FE7C0, size 16 were hit!
+>$: 75622042 616E6400 BBBBBBBB BBBBBBBB BBBBBBBB BBBBBBBB BBBBBBBB 
+(memory after this allocation was trashed; trash shown at left)
+
+
+  FreeMem(0x2FE7C0,14) attempted by `mungwalltest' (task 0x3E08F0)
+  from A:0x3EBB40 C:0x3EF5F4 SP:0x4559D0
+(deallocation refused due to trashing explained in last two reports)
+
+
+Failed memory allocation!
+AllocMem(0x500000000,1) attempted by `flush' (task 0x3E08F0)
+  from A:0x453E96 C:0x1 SP:0x4820F4
+(SHOWFAIL option shows flush tried to allocate memory and failed)
+
+
+As you can see, Mungwall alone can catch a large variety
+of memory-related software problems.  But one the most important
+benefits of Mungwall is that by filling freed memory with nasty
+32-bit values, it can force subtle memory misuse problems
+into the open, by often causing the misuses to access addresses that
+can be trapped on by Enforcer.
+
+Enforcer and Mungwall are required tools for the development of
+bug-free Amiga software.  If you don't have an MMU, get one.
+The investment in an A3000, 68030 card, or 68020+MMU card
+will quickly pay for itself by cutting down on your development
+and allowing you to catch and find software problems with Enforcer.  
+Enforcer and Mungwall are not just for developers and QA departments.
+Anyone who uses or reviews inhouse software or software for
+purchase or contract can benefit your company by catching hidden
+software problems during normal usage and examination of the programs.
+Many people at Commodore and other companies run Enforcer and Mungwall
+all of the time.  Keep that in mind if you are trying to impress a
+company with your software!
+
+
+Other Debugging and Testing Tools
+=================================
+
+The next three tools, Memoration and Scratch by Bill Hawes, and IO_Torture
+by Bryce Nesbitt are important QA tools for testing the robustness of all
+application failure code, for uncovering illegal register usage in
+assembler code, and for detecting unsafe use of device IO requests.
+Following notes on these three are notes on some of the additional
+debugging and stresstest tools provided by CATS.
+
+
+Memoration
+==========
+Memoration by Bill Hawes is a tool to selectively limit the ability of a
+task or module to allocate memory, thereby simulating the effects of a
+low-memory condition.  It provides the unique ability to selectively
+cause each individual memory allocation of a program, whether direct
+or indirect, to fail, thereby allowing you to test the failure path
+and abort code at every point in your application code.
+
+Memoration works by SetFunctioning the Exec AllocMem and/or AllocVec
+entries and then screening the requests.  If a request from a particular
+task or range of addresses is received, memoration returns a zero instead
+of passing it through to AllocMem.
+
+When a task or module is denied a memory request, memoration sends a
+message to the serial port identifying the client task ID, the address it
+was called from, and the size of the denied request.  If the software can't
+handle being denied its memory request, this message will typically be
+followed by a series of enforcer reports telling of how the software went
+ahead and wrote to location 0.
+
+
+Command-Line Parameters.
+Memoration accepts command-line parameters to specify the module or task
+name and the range of memory sizes to disallow.  The argument template is
+
+MODULE,TASK/K,CLI/K/N,OFF/S,MIN/K/N,MAX/K/N,AFTER/K/N,EVERY/K/N,ALLADDR/S,
+ALLOCVEC/S,CHIP/S,FAST/S,BACKTRACE/K/N
+
+and the specifications can be changed at any time by reissuing the command.
+
+
+MODULE is the name of a ROMTag or library.  The resident modules are
+searched first, followed by a search of the system library list.  When an
+entry is found, the range of addresses encompassing its code is determined
+using several methods.  For ROMTags the range extends from the ROMTag
+itself to the next higher module, or to RT_ENDSKIP if no higher module
+exists.  For libraries a certain amount of voodoo is required, as the
+location of the library ROMtag isn't stored in the (public) library
+structure. In this case memoration examines the LVOs to determine the
+lowest and highest addresses, and then searches for a ROMtag in the range
+(low-$2000,high+$2000).  If a ROMTag is found, memoration uses the smaller
+of the ROMTag addresss and the lowest LVO address as the low limit, and the
+larger of the RT_ENDSKIP address and the highest LVO address as the high
+limit.
+
+TASK specifies the name of a task to trap.  The task must exist at the time
+memoration is run, and for best results should persist for the course of
+testing.  If you're using WShell (as you should be) you can define a name
+for a particular shell instance by using ``newwsh name sucker''.
+
+CLI specifies a shell number as the task to trap.
+
+MIN specifies the minimum memory request to trap.  The default is 0.
+
+MAX specifies the maximum allocation to trap.  The default is 2000000.
+
+OFF turns off memory trapping.  The code patch is left intact, but won't
+trap any requests until enabled again.  AllocMem and AllocVec traps
+can be turned on and off separately.
+
+ALLOCVEC sets the trap for the AllocVec() entry, instead of AllocMem().
+Both functions can be trapped independently.
+
+AFTER specifies the number of allocations (within other specifications) to
+pass before beginning the trap.
+
+EVERY traps every Nth allocation meeting the specifications.
+
+ALLADDR sets the address range to all memory.
+
+CHIP limits the trap to CHIP memory specifications.
+
+FAST limits the trap to FAST memory specifications.
+
+BACKTRACE specifies the number of longwords of stack backtrace desired.
+
+
+Examples:
+  memoration myprog after 15  ; after 15th allocation, deny myprog any memory
+  memoration dos.library  ; disable all DOS allocations
+  memoration task DF0 min 400 ; disable larger allocations by DF0:
+  memoration icon.library task Workbench every 3
+  memoration console.device min 40 backtrace 8
+
+Example test session to test failure of every allocation an application makes:
+
+Open two shells - one for memoration (here 1>) and one for myprog (here 2>).
+Alternately, you could start myprog from Workbench.
+Run Enforcer and Mungwall.
+Have serial or Sushi debugging set up.
+
+1> memoration myprog after 0
+2> myprog	; a failure occurs but hopefully no hits or crashes
+1> memoration off
+(exit myprog if it made it up)
+
+1> memoration myprog after 1
+2> myprog	; a failure occurs but hopefully no hits or crashes
+1> memoration off
+(exit myprog if it made it up)
+
+1> memoration myprog after 2
+2> myprog	; a failure occurs but hopefully no hits or crashes
+1> memoration off
+(exit myprog if it made it up)
+
+etc.  Note - until you get up to a higher "after" number, myprog will likely
+fail during the startup code it is linked with - i.e. before even
+reaching your main() entry point.  
+
+Further Notes.
+Memoration uses a seglist-split for its code patch, and so shouldn't be made
+resident, at least not on the first execution.  Memoration was written by
+William S. Hawes.
+
+
+Scratch
+=======
+Scratch by Bill Hawes purposely trashes the scratch registers (D1, A0, A1)
+on exit from library functions of any "scratched" library.
+This will point out assembler callers that accidentally or
+purposely depend upon getting "useful" values from those registers.  
+It is extrememly important that ALL assembler applications be tested with
+Scratch.  Even minor changes to the OS can change the values that happen to
+be left over in registers on exit from a system library function.
+Assembler code that is accidentally reusing a scratch register
+(for example A1) after a system call, or code that is looking at the
+wrong register for a result has the potential to break badly with
+even a minor change to the OS.  Scratch can catch these problems before
+you ship.  To use Scratch, see the script "SCRATCHALL.SCRIPT" which
+properly excepts certain system functions from scratching.
+
+
+IO_Torture
+==========
+IO_torture is a tool which can be used to check for improper use
+or reuse of device IO requests.
+
+IO_torture should be part of the standard test suite for all products.
+
+Exec device IO usage is tracked by IO_torture.  If an IORequest is reused
+while still active, IO_torture will print a warning message on the serial
+port (parallel for IO_torture.par).
+
+The current plan of IO_torture includes:
+
+        SendIO() - Check that message is free.  Check for ReplyPort.
+        Be sure request is not linked into a list.
+
+        BeginIO() - Check that message is free.  Check for ReplyPort.
+        Be sure request is not linked into a list.
+
+        OpenDevice() - Mark message as free.  If error, trash IO_DEVICE,
+        IO_UNIT and LN_TYPE.
+        Be sure request is not linked into a list.
+
+        CloseDevice() - Check that message is free.  Trash IO_DEVICE,
+        IO_UNIT.
+
+
+IO_torture does not currently check for another common mistake:
+After virtually all uses of AbortIO(IORequest), there should be a
+call to WaitIO(IORequest).  AbortIO() asks the device to finish
+the I/O as soon as possible; this may or may not happen instantly.
+AbortIO() does not wait for or remove the replied message.
+
+Note regarding NT_MESSAGE:  NT_MESSAGE would seem to be the correct node
+type for an IO request which is newly initialized.  However, part of
+how IO_torture works is that it makes sure in-use requests are marked as
+NT_MESSAGE, and would normally complain if such an NT_MESSAGE came
+through BeginIO or SendIO (as it would signify reuse before ReplyMsg).
+So that IO_torture will not complain about a freshly initialized
+MT_MESSAGE IO request, IO_torture also checks to see if the message
+has ever been linked into a list.  If it has not, IO_torture will
+let the NT_MESSAAHE marked request by without complaining.  This
+is necessary because the amiga.lib CreateExtIO and CreateStdIO
+historically set a newly created IO request node type to NT_MESSAGE.
+
+
+SegTracker
+==========
+SegTracker is an important new tool that comes with Enforcer.
+SegTracker should be called early in your startup sequence if possible,
+right after SetPatch (you should never call anything before SetPatch).
+SegTracker installs a routine which will keep track of the seglists
+of loaded code in the system, including disk-loaded programs, libraries,
+devices, and handlers.  SegTracker provides a function which may be
+called by other debugging tools to let them determine the seglist
+name, hunk, and offset of RAM addresses in any loadsegged code.
+Many of debugging tools now call SegTracker's function to provide
+name, hunk, and offset information for hits or other addresses.
+SegTracker makes it possible for the other tools (Mungwall, TNT,
+TStat, etc.) to provide this information even when the PC or hit is
+within disk-loaded code other than the process's own code.
+We would also like third-party debugging tools to use SegTracker's
+function to find hunk and offset debugging information.
+SegTracker can also be used as a command to dump a list of
+all loaded segments or to find the seglist containing a particular
+address.  See Enforcer.doc for more information and the programmatic
+interface for SegTracker.
+
+
+Devmon
+======
+Devmon is a tool which allows you to monitor the activity of any
+exec device.  It is extremely useful for debugging both application
+use of a device and your own device drivers.  Devmon captures
+(or outputs to serial or Sushi) debugging information everytime
+any vector of a monitored device is entered.  Optionally, Devmon
+can also report on the entry to (and in some cases, exit from)
+the exec library functions which call the device.
+
+USAGE: devmon name.device unitnum [remote] [hex] [allunits] [full]
+
+remote		means serial debugging output
+hex		means show values in hex
+allunits	monitor regardless of unit pointer (required if device
+			gives a new unit pointer to every opener)
+full		means also monitor exec device-related library functions
+
+
+Some sample Devmon output as generated by:
+
+	devmon clipboard.device 0 allunits hex full remote
+
+
+In the following regular devmon output lines, UPPERCASE: signifies
+entry to an actual device vector, while MixedCase: signifies entry to
+(or Rts from) an exec function.  The number preceded by "@" is the
+address of the IO request.  The single letters following are
+abbreviations for the fields of an IOStdRequest (C means io_Command,
+F means io_Flags, E means io_Error, etc.).  When Devmon is exited,
+it outputs a key to these fields.
+
+Here we see C:ConClip executing DoIO of a request containing CMD_WRITE
+(C = 3, as defined in exec/io.h) of 8 bytes (L=$8) of data at $30BDF0.
+We see the same IO request make it to the BEGINIO vector of the
+device, and then we see the DoIO completing successfully with an
+io_Actual (A=) of 8.
+
+DoIO : @$478294 C= 3 F=$81 E=0 A=$4 L=$8 D=$30BDF0 O=$0 (C:ConClip)
+BEGIN: @$478294 C= 3 F=$1 E=0 A=$4 L=$8 D=$30BDF0 O=$0 (C:ConClip)
+DoRts: @$478294 C= 3 F=$81 E=0 A=$8 L=$8 D=$30BDF0 O=$8 (C:ConClip)
+
+
+TNT
+===
+TNT installs a trap handler that replaces Software Error requesters
+with a large requester containing informative debugging information.
+TNT can be called in your user-startup (it does not need to be run).
+But it does not get along well with trap-based single-stepping debuggers.
+So if you plan to run a debugger, turn off TNT with TNT OFF.
+
+TNT requesters contain PC, task/command name, SP, SSP, register, and
+stack contents information similar to that displayed by Enforcer.
+
+ 
+Owner and LVO
+=============
+Owner and LVO are very useful for determining the owner of a memory address.
+This can help you determine the location and even the cause of an
+Enforcer or Mungwall hit.
+
+LVO requires the Amiga FD files for your OS version in a directory
+assigned the logical name FD:.  The FD files are provided with 
+the includes and linker libs for the OS.
+
+When you get a hit, use OWNER to determine if the address is in a ROM
+module (such as exec or intuition), or in the loaded code, stack, port,
+or other memory owned by a program.  Note that owner can not determine
+if an address is in the code of a disk-loaded device or library because
+there is no standard place for devcies and libraries to store their
+seglist.
+
+Example:
+
+1> owner 0x202443
+
+Address  - Owner
+--------   -----
+00202442 - in resident module: exec 39.47 (28.8.92)
+
+
+Now use LVO to determine the probable function at that address within
+the subsystem:
+
+1> LVO exec romaddress=0x202442
+
+Closest to $202442 without going over:
+exec.library  LVO $fe0e -498  OpenResource() jumps to $202358 on this system
+
+LVO can also be used as a programming helper to list one function and
+its FD comment:
+
+1> LVO exec AllocMem
+exec.library  LVO $ff3a -198  AllocMem()
+AllocMem(byteSize,requirements)(d0/d1)
+
+LVO will list all of a library's LVOs if no function name is provided.
+With the optional CONTAINS keyword, LVO will also list the addresses
+each function jumps to on YOUR system (different on different systems).
+Note that if you have debugging tools installed which use SetFunction
+(for example, Mungwall, Devmon, or Scratch), LVO will not be able to
+determine the ROM address of the SetFunctioned library functions
+because the LVOs of those functions will point to the SetFunctioned
+RAM code.
+
+LVO can also create command lines for the "Wedge" program.
+
+Note that LVO and Wedge can only interact with actual
+library functions, not for their various stub interfaces which
+only exist in linker libraries.  Actual library functions are the
+functions listed in the FD file for the libraries.
+Note also that under new versions of the OS, some older library
+functions become unused by the OS and newer functions are used
+in their place.
+
+
+Wedge
+=====
+Wedge is a tool for wedging into almost any system library function
+and monitoring calls to and results from the function, for any or
+all system tasks.  Sometimes it can be more efficient to quickly
+wedge and monitor a system function rather than ad debugging code
+and recompile.  It used to be very difficult to create command
+line arguments for wedge.  But LVO can generate a template command
+line to "wedge" into any system function.
+
+Example: Creates a wedge command for wedging into OpenScreen
+
+1> LVO intuition CloseScreen wedgeline      
+run wedge intuition 0xffbe 0x8100 0x8100 opt r   "c=CloseScreen(screen)(a0)"
+
+If you execute the WEDGE command line above, you will receive serial
+reports on every call to CloseScreen.  To turn off the wedge, type
+WEDGE KILLALL.  See Wedge.doc for more information.
+ 
+
+Tstat
+=====
+Tstat is a handy little tool for checking the signals, priority,
+state, and other Task control block variables of any task or command.
+Tstat also does its best to show the task registers as they were
+saved at task-switch time, and the stack usage of the task or command.
+Note however that Tstat is looking at provate exec Task context information
+and therefore often needs to be updated for each OS release, and may
+misinterpret the task context data in unusual conditions such as
+a task switch which occures in the middle of an FPU instruction. 
+But it is very useful when checking for lost signals, bad Forbid or
+Disable counts, and hung Waits.  Tstat can monitor once, or periodically.
+For example, tstat MyProg -4 would monitor MyProg every 4/50's of a second
+until CTRL-C is hit.  In a pinch, Tstat can be used as a poor-man's
+logic state analyzer to track another program stuck in a loop.
+
+
+Other Memory Tools
+==================
+EatMem is an interactive tool for scaling back the apparent amount of memory
+available to the system.  It is useful for testing applications in a simulated
+low-memory situation, as well as for testing how an application deals with
+only chip memory or only fast memory.  EatMem requires at least V37 OS.
+
+MemList displays all memory blocks (both free and in-use) in the system.
+It can be useful for debugging fragmentation/deallocation problems.
+See also the NAMETAG option of Mungwall, and Munglist.
+
+Frags displays a chart of current systen memory fragmentation.
+
+Memmon saves current free memory and a comment to a file on demand.
+It is useful for documenting memory usage while testing various
+program operations.
+
+Flush does two large allocations designed to fail and thereby cause
+all disk-loaded devices, libraries, and fonts which are not currently
+in use to be flushed from the system.  Useful when doing memory-loss
+testing and device or library development.
+
+Snoop can be used to snoop memory allocations, but has largely been
+replaced by the more flexible Mungwall SNOOP option.  SnoopStrip
+is used to discard allocation/deallocation pairs from captured Snoop
+or Mungwall SNOOP output.
+
+
+Report
+======
+All bug reports, compatibility problem reports, and enhancement
+requests must be generated with the latest Amiga "Report" program
+(currently version 39.5), or must be compatible with the output
+of the Amiga Report program.  This makes automatic submission
+and routing of bug reports possible.  The Report program is
+included on most developer tool and Devcon disks.  Report HELP
+will output instructions and submissions addresses.
+
+We STRONGLY REQUEST that you submit your reports electronically
+if possible.  PLEASE USE REPORT.  Only mail them on paper if you
+have no other method available.  
+
+European ADSP users: Post in appropriate closed adsp bugs topic
+
+BIX/CIX: Post bugs in the appropriate bugs topic of your closed conference.
+
+UUCP: to uunet!cbmvax!bugs OR rutgers!cbmvax!bugs OR bugs@commodore.COM
+  (enhancement requests to cbmvax!suggestions instead of cbmvax!bugs)
+
+Mail: Mail individual bug reports in Report format, on disk if possible.
+  European developers: Mail bug reports to your support manager
+  unless your support manager says to mail directly to West Chester.
+  U.S./others mail to: Amiga Software Engineering, ATTN: BUG REPORTS,
+  CBM, 1200 Wilson Drive, West Chester, PA., 19380, USA
+
+Please make sure the initial one-line bug description you provide
+in each of your reports is as explicit as possible.  Engineering's bug
+summary reports and bug processing tools often list only the one-line
+description for each bug.  "Bug in intuition" is a useless title
+for an intuition subsystem bug.  "Pixel trash when window dragged left"
+is a much better title.
+
+The latest Report program always includes a list of the currently
+acceptable subsystems for bug reports and enhancement requests.
+These allow reports to be properly routed.  A recent list includes:
+
+A2024           amigavision     cia.resource   filesysres     input.device   
+A2065           appshell        clipboard      filesystem     installer      
+A2090.A2090A    arexx           commodities    fonts          intuition      
+A2091.A590      art             con-handler    fountain       iprefs         
+A2232           as225           console.device gadget.classes keyboard       
+A2300           asl.library     creditcard     gadtools       keymap         
+A2410           audio.device    crossdos       gameport       keymaps        
+A2620           autoconfig      custom.chips   genlock        kickmenu       
+A2630           battclock       datatypes      graphics       layers         
+A3000           battmem         debug.lib      hardware       locale.library 
+AmigaBasic      bootmenu        disk.resource  hdbackup       mathffp        
+aa.chips        bridgeboard     diskfont       hdtoolbox      mathieee       
+alink           bru             documentation  icon.library   mathieeedoub   
+amiga.lib       bullet          dos.library    iconedit       mathieeesing   
+amigaguide      cdos.command    exec           ide.device     microemacs     
+amigaterm       cdtv            expansion      iffparse       monitors
+multiview       printer.driver  scsi.device    timer.device   util.command   
+narrator.device queue-handler   serial.device  toolkit        utility.library
+new.look        ram-handler     setpatch       toolmaker      wack           
+parallel.device ramdrive.device shell          tools          wbtag          
+port-handler    ramlib          speak-handler  trackdisk      workbench      
+potgo.resource  resource        startup        translations                  
+preferences     sana2           strap          translator                    
+printer.device  script          system.command unix

@@ -1,0 +1,917 @@
+		          Locale Library
+
+This document has two parts:
+
+	- Introduction To Locale
+	- Writing Localized Applications
+
+
+NOTE - See also the locale examples which include code you can link
+with to self-load your catalogs on V37 machines.
+
+
+
+			Introduction to Locale
+                        ======================
+   (c) Copyright 1991-93 Commodore-Amiga, Inc. All Rights Reserved
+
+Localization is the process by which software dynamically adapts to
+different locales.  A locale is made up of a set of attributes
+describing a language, a set of cultural and lingual conventions, a
+physical location, etc.
+
+Without standardized system support to help deal with localization
+issues, the task of localizing applications is significant.  There
+needs to be several different versions of every application, each
+specially adapted to run in a particular language and country.
+
+Given the importance of the international market to the Amiga, it is
+imperative that the operating system provide services to facilitate,
+and thus encourage, application software localization.  This is where
+locale.library comes in.
+
+The locale.library is an Amiga shared library offering services to let
+applications transparently adapt to any locale the user has chosen.
+Functions are provided for formatted information display, text catalog
+management, character attribute acquisition, string sorting, and more.
+
+
+Compatibility-Now and in the Future
+
+In a world where inter-platform compatibility is increasingly
+important, it is a significant advantage to adhere as closely as
+possible to adopted standards.  This makes developing and porting
+applications to the Amiga easier, thus encouraging it.
+
+The locale.library offers the necessary services to implement fully
+compatible X/Open - ANSI/C localization support.  Simple wrapper
+functions need to be provided by compiler writers to adhere to these
+standards, but the nuts and bolts of localization is in the library.
+
+The locale.library provides for easy and virtually unlimited expansion.
+All character manipulation routines are defined as accepting 32-bit
+characters, allowing future support for multi-byte character sets such
+as UniCode.  Provisions are also made to allow the use of different
+character sets such as Cyrillic.
+
+Since all language-specific text manipulation is implemented within
+language drivers, the library does not impose any artificial limitation
+on the simplicity or complexity of the algorithms used within the
+drivers.  This enables the creation of very specialized sorting
+algorithms that adhere closely to a language's grammatical rules.
+Workbench Disk
+
+System localization is accomplished by an update to the Workbench disk.
+The changes needed include:
+
+locale.library - This is the central element to localization and
+contains routines to allow management of locales, catalogs, and strings.
+
+Language drivers - Much of locale.library's functionality is
+implemented through language drivers.  There is one such driver for
+every language supported.  All the language drivers are stored in the
+LOCALE:Languages directory.
+
+Country database - A set of files describing various attributes of
+every country supported, including the country's currency symbol,
+number format, measuring system, etc.  Country files are stored in the
+LOCALE:Countries directory.
+
+Locale preferences editor - A preferences editor found in the Prefs
+drawer that lets the user select which languages he speaks, the country
+in which he lives, and his time zone.
+
+Revised system programs - Most programs found on the Workbench and
+Extras disks need to be updated in order to use locale.library.
+
+System catalogs - A set of system text catalogs stored in the
+LOCALE:Catalogs directory.  These provide all the strings needed to
+operate the system in different languages.
+
+Application catalogs - A set of application text catalogs stored in
+either the PROGDIR:Catalogs or LOCALE:Catalogs directories.  These are
+provided by applications and let them run in different languages.
+
+
+Patching the ROM
+
+When an updated version of IPrefs is run, it instructs locale.library
+to patch several ROM routines to transparently provide them with
+localized behavior.
+
+The ROM routines patched by locale.library are:
+
+exec.library/RawDoFmt()
+    Adds argument ordering support using nn$ specifications (see below
+for more information on this).  Adds %U and %D formatting commands for
+localized number output.
+
+dos.library/DosGetString() (internal routine)
+    Adds the ability to make use of disk-based text catalogs instead of
+always returning ROM-based strings.
+
+dos.library/DateToStr() & dos.library/StrToDate()
+    Process and output localized dates
+
+utility.library/ToLower() & utility.library/ToUpper()
+    Use the current language driver to adapt their behavior based on
+the user's current locale
+
+utility.library/Strnicmp() & utility.library/Stricmp()
+    Use the current language driver to adapt their behavior based on
+the user's current locale
+
+In addition, a new version of the LoadWB command patches a routine in
+workbench.library which enables the Workbench to run in the user's
+preferred language.
+
+
+Disk Files
+
+The locale.library loads three types of files from disk to provide its
+functionality:
+
+   o  Preferences files
+The user's locale preferences are stored as a standard prefs file named
+ENV:Sys/locale.prefs.  The Locale prefs editor is provided to let the
+user control the contents of this file. An in-memory Locale structure
+is built directly based on a locale preferences file.
+
+   o  Language drivers
+Each locale has a single language driver bound to it.  When a locale is
+loaded in memory, a language driver is also loaded and automatically
+bound to the locale.  The language drivers are located in
+LOCALE:Languages.  For example:
+
+                LOCALE:Languages/dansk.language
+                LOCALE:Languages/francais.language
+                LOCALE:Languages/italiano.language
+
+        A language driver is an Amiga shared library providing around a
+dozen functions for string and character-oriented operations that need
+to be adapted depending on the language being used.  The way each
+function is implemented is hidden to locale.library, allowing maximum
+flexibility for the driver when dealing with complex languages.
+
+    o  Message catalogs
+Catalogs contain a series of translated strings for use by an
+application.  They are stored on disk in an IFF file that is processed
+and managed by calls in the library.  A utility called CatComp is
+provided that lets catalog files be generated easily.
+
+        Each locale contains a list of preferred languages.  When a
+message catalog is accessed via the OpenCatalog() function,
+locale.library attempts to find a catalog in one of the locale's
+preferred languages.  OpenCatalog() looks in two different places for
+message catalogs:
+
+                PROGDIR:Catalogs/languageName/catalogName
+                LOCALE:Catalogs/languageName/catalogName
+
+        languageName is one of the locale's preferred languages.
+catalogName is the name of the catalog the application wishes to open.
+Typically, catalogName is the name of the application suffixed with
+``.catalog''.
+
+Looking in the LOCALE: directory for catalogs lets the user put message
+catalogs for small applications (system tools for example) into a
+single directory, or even simpler on a single disk called LOCALE.  In
+addition, using LOCALE: gives applications loaded as resident the
+ability to load in catalogs.  Since resident applications do not get
+the benefit of PROGDIR:, LOCALE: becomes the automatic fall-back.
+
+Of course, language drivers and catalogs are transparently cached by
+locale.library and get flushed whenever a memory panic occurs and when
+their respective use count is 0.
+
+
+Functions
+
+locale.library implements the actual localization facilities for
+application use.  Around two dozen functions are available to access
+and manipulate locales, catalogs, and strings.  Language drivers
+implement much of the functionality found in locale.library.  The
+drivers offer services needed by the higher-level functions in the
+library.  Each locale is bound automatically to a single language
+driver.
+
+
+Locales
+
+The two most basic routines in the library are OpenLocale() and
+CloseLocale().  OpenLocale() returns a pointer to a Locale structure,
+which can then be used with most of the other functions in the library.
+A Locale structure describes all the attributes necessary to localize
+an application and is built from the values found in a locale
+preferences file.
+
+During the OpenLocale() call, a language driver is automatically bound
+to a locale.  The language driver bound to the locale depends on the
+list of preferred languages specified by the user.  There is one driver
+per supported language.  Drivers are easy to write and new ones can be
+added by C= or third parties to support new languages as demand arises.
+
+The language drivers offer specific services needed by the library to
+implement its functionality.  This currently involves only text
+manipulation functions specifically adapted to the language at hand.
+For example, sorting text behaves differently from language to language
+and needs to be taken care of by specialized code.
+
+
+Catalogs
+
+Message catalogs are a simple means for an application to separate the
+strings of a program from the actual executable.  By adding new message
+catalogs, the application can be made to support new languages and to
+display all of its output in the desired language.
+
+Message catalogs are loaded in memory via the OpenCatalog() function.
+Two of the parameters required by this function are a locale and a
+catalog name.  The locale is provided since it contains the list of the
+user's preferred languages.  Based on these languages, OpenCatalog()
+attempts to find the best catalog possible from the series of catalogs
+provided by the application.
+
+Once a message catalog is in memory, any string it contains can be
+retrieved using the GetCatalogStr() routine.  The routine expects a
+number specifying which string of the catalog is to be returned.
+Sparse numbering of the strings is supported providing the most
+convenience possible to the application writer.
+
+Date And Time
+
+A Locale structure specifies special date and time formatting strings.
+These strings describe exactly how the date and time are to be
+displayed and interpreted.  The FormatDate() routine is provided to
+convert an AmigaDOS DateStamp structure into a localized date string,
+while the ParseDate() routine converts a string to a DateStamp
+structure.
+
+
+Argument Positioning
+
+The grammar of most languages requires that subjects, objects, adverbs
+and complements be written out in a specific order.  This order varies
+from language to language.  For example:
+
+        ``Please insert volume Workbench in drive DF0:''
+
+might be said as:
+
+        ``Insert in drive DF0: volume Workbench please''
+
+To address this problem, an extension to the standard C-language
+printf() conventions used by FormatString() is argument position
+specification.  Specifying the argument position lets the order of the
+% commands change while the arguments provided remain the same.  Using
+the C printf() call as an example:
+
+eyes = 2;
+feet = 3;
+ears = 4;
+printf("%d eyes, %d feet and %d ears",eyes,feet,ears);
+printf("%3$d ears, %1$d eyes and %2$d feet",eyes,feet,ears);
+
+These two statements would produce the following output:
+
+        ``2 eyes, 3 feet and 4 ears''   for the first
+        ``4 ears, 2 eyes and 3 feet''   for the second
+
+The argument positioning feature lets you change the format string
+being processed while keeping the data stream the same.  This is an
+invaluable tool when translating strings to different languages.
+
+So, in practical terms, you can change the order in which things
+appear.  As an example, the following string from the workbench catalog:
+
+        ``Amiga Workbench  %lD graphics mem  %lD other mem''
+
+can be changed to:
+
+        ``Amiga Workbench  %2$lD other mem  %1$lD graphics mem''
+
+and the string produced and displayed in the title bar of the Workbench
+would be correct.
+
+The locale.library patches exec.library/RawDoFmt() to give it support
+for argument ordering.  In addition, locale's own FormatString()
+routine supports argument ordering as well.
+
+
+Sorting
+
+Sorting follows different rules based on the language of the strings
+being sorted.  Thus, locale.library provides two routines to deal with
+sorting: StrnCmp() and StrConvert().
+
+StrnCmp() is similar to the C function of the same name, except that it
+takes an argument specifying which type of sort to perform.  There are
+currently three supported sorts, each having its own role.  Refer to
+the autodoc entry for the StrnCmp() function for more information.
+
+StrConvert() is a routine to enhance performance.  Its purpose in life
+is to convert a string into a special format that can be compared
+efficiently.  That is, the more advanced comparison types offered by
+StrnCmp() can be several times slower than a standard ASCII-based
+strncmp() call in C because StrnCmp() takes into account many more
+factors when sorting.
+
+In programs, it is often necessary to compare a single string with many
+different strings.  Think for example of how alphabetical insertion
+into a list is done.  In these cases, the slower operation of StrnCmp()
+vs strncmp() can impact performance.  To alleviate this, StrConvert()
+allows you to perform most of the work performed by StrnCmp() only
+once.  Once a string has been converted by StrConvert(), it can be used
+with regular C strncmp() calls.
+
+To clarify, given two strings A and B, the following will produce
+equivalent results:
+
+StrnCmp(A,B)  ==  StrConvert(A,a)
+StrConvert(B,b)
+strncmp(a,b)
+
+
+Example
+
+Here is a sample localized C program.  This program requires a message
+catalog called sample.catalog to get its strings from.
+
+/* localetest.c */
+#include <exec/types.h>
+#include <exec/libraries.h>
+#include <libraries/locale.h>
+
+#include <clib/exec_protos.h>
+#include <clib/dos_protos.h>
+#include <clib/locale_protos.h>
+
+
+/*****************************************************************************/
+
+
+extern struct Library *DOSBase;
+extern struct Library *SysBase;
+       struct Library *LocaleBase;
+       struct Catalog *catalog = NULL;
+
+
+/*****************************************************************************/
+
+
+enum AppStringsID
+{
+    MSG_HELLO,
+    MSG_BYE
+};
+
+
+
+/*****************************************************************************/
+
+
+STRPTR AppStrings[] =
+{
+    "Hello World!\n",
+    "Bye, I'm leaving...\n"
+};
+
+
+/*****************************************************************************/
+
+
+STRPTR GetString(enum AppStringsID id)
+{
+    if (LocaleBase)
+        return(GetCatalogStr(catalog,id,AppStrings[id]));
+
+    return(AppStrings[id]);
+}
+
+
+/*****************************************************************************/
+
+
+VOID main(VOID)
+{
+    if (LocaleBase = OpenLibrary("locale.library",38))
+        catalog = OpenCatalogA(NULL,"sample.catalog",NULL);
+
+    PutStr(GetString(MSG_HELLO));
+    PutStr(GetString(MSG_BYE));
+
+    if (LocaleBase)
+    {
+        CloseCatalog(catalog);
+        CloseLibrary(LocaleBase);
+    }
+}
+
+
+Structures
+
+The Locale structure is the main public structure provided by
+locale.library.  The structure is defined in <libraries/locale.h> and
+consists of the following fields:
+
+STRPTR loc_LocaleName
+    Locale's name.
+STRPTR loc_LanguageName
+    The language of the driver bound to this locale.
+STRPTR loc_PrefLanguages[10]
+    The ordered list of preferred languages for this locale.
+ULONG loc_Flags
+    Locale flags.  The single current flag specifies whether daylight
+    savings time should be used in the system.
+ULONG loc_CodeSet
+    Specifies the code set required by this locale. Currently, this
+value is always 0.
+ULONG loc_CountryCode
+    The international country code.
+ULONG loc_TelephoneCode
+    The international telephone code for the country.
+LONG loc_GMTOffset
+    The offset in minutes of the current location from GMT.
+UBYTE loc_MeasuringSystem
+    The measuring system being used.
+UBYTE loc_CalendarType
+    The type of calendar being used.
+STRPTR loc_DateTimeFormat
+    The date and time format string, ready to pass to FormatDate().
+STRPTR loc_DateFormat
+    The date format string.
+STRPTR loc_TimeFormat
+    The time format string.
+STRPTR loc_ShortDateTimeFormat
+    The short date and time format string, ready to pass to
+    FormatDate().
+STRPTR loc_ShortDateFormat
+    The short date format string.
+STRPTR loc_ShortTimeFormat
+    The short time format string.
+STRPTR loc_DecimalPoint
+    The decimal point character used to format non-monetary quantities.
+STRPTR loc_GroupSeparator
+    The characters used to separate groups of digits before the
+    decimal-point character in formatted non-monetary quantities.
+STRPTR loc_FracGroupSeparator
+    The characters used to separate groups of digits after the
+    decimal-point character in formatted non-monetary quantities.
+STRPTR loc_Grouping
+    A string whose elements indicate the size of each group of digits
+    before the decimal-point character in formatted non-monetary
+    quantities.
+STRPTR loc_FracGrouping
+    A string whose elements indicate the size of each group of digits
+    after the decimal-point character in formatted non-monetary
+    quantities.
+STRPTR loc_MonDecimalPoint
+    The decimal point used to format monetary quantities.
+STRPTR loc_MonGroupSeparator
+    The separator for groups of digits before the decimal point in
+    monetary quantities.
+STRPTR loc_MonFracGroupSeparator
+    The separator for groups of digits after the decimal point in
+    monetary quantities.
+STRPTR loc_MonGrouping
+    A string whose elements indicate the size of each group of digits
+    before the decimal-point character in monetary quantities.
+STRPTR loc_MonFracGrouping
+    A string whose elements indicate the size of each group of digits
+    after the decimal-point character in monetary quantities.
+UBYTE loc_MonFracDigits
+    The number of fractional digits (those after the decimal-point) to
+    be displayed in a formatted monetary quantity.
+UBYTE loc_MonIntFracDigits
+    The number of fractional digits (those after the decimal-point) to
+    be displayed in an internationally formatted monetary quantity.
+STRPTR loc_MonCS
+    The local currency symbol applicable to the current locale.
+STRPTR loc_MonSmallCS
+    The currency symbol for small amounts.
+STRPTR loc_MonIntCS
+    The international currency symbol applicable to the current locale.
+    The first three characters contain the alphabetic international
+    currency symbol in accordance with those specified in ISO 4217
+    Codes for the Representation of Currency and Funds.  The fourth
+    character (immediately preceding the NULL) is the character used to
+    separate the international currency symbol from the monetary
+    quantity.
+STRPTR loc_MonPositiveSign
+    The string used to indicate a nonnegative-valued formatted monetary
+    quantity.
+UBYTE loc_MonPositiveSpaceSep
+    Specifies the number of spaces separating the currency symbol from
+    the non-negative monetary quantity.
+UBYTE loc_MonPositiveSignPos
+    Set to a value indicating the positioning of loc_MonPositiveSign
+    for a non-negative monetary quantity.
+UBYTE loc_MonPositiveCSPos
+    Set to 1 or 0 if loc_MonCS respectively precedes or succeeds the
+    value for a non-negative monetary quantity.
+STRPTR loc_MonNegativeSign
+    The string used to indicate a negative-valued monetary quantity.
+UBYTE loc_MonNegativeSpaceSep
+    Specifies the number of spaces separating the currency symbol from
+    the negative monetary quantity.
+UBYTE loc_MonNegativeSignPos
+    Set to a value indicating the positioning of loc_MonNegativeSign
+    for a negative formatted monetary quantity.
+UBYTE loc_MonNegativeCSPos
+    Set to 1 or 0 if loc_MonCS respectively precedes or succeeds the
+    value for a negative formatted monetary quantity.
+    The grouping tables pointed to by loc_Grouping, loc_FracGrounping,
+    loc_MonGrouping, and loc_MonFracGrouping contain a stream of bytes
+    with the following values:
+
+255     No further grouping is to be performed.
+
+0       The previous element is to be repeatedly used for the remainder
+of the digits.
+
+1..254  The integer value is the number of digits that comprise the
+current group.  The next element is examined to determine the size of
+the next group of digits before the current group.
+
+The values of loc_MonPositiveSignPos and loc_MonNegativeSignPos are
+interpreted according to the following:
+
+0       Parentheses surround the quantity and currency symbol
+1       The sign string precedes the quantity and currency symbol
+2       The sign string succeeds the quantity and currency symbol
+3       The sign string immediately precedes the currency symbol
+4       The sign string immediately succeeds the currency symbol.
+
+
+Using Locale.library from ARexx
+
+locale.library provides an ARexx function host interface enabling ARexx
+programs to take advantage of system localization.  The functions
+provided by the interface are directly analogous to the functions
+available to C and assembly programmers, with the differences mostly
+being in the way they are called.
+
+The function host library vector is located at offset -30 from the
+library.  This is the value you provide to ARexx in the AddLib()
+function call.  Here is a sample ARexx script to add locale.library to
+ARexx's function host list:
+
+    /* Make sure the library is loaded as a function host */
+    IF ~SHOW(L,'locale.library') THEN DO
+      CALL ADDLIB('locale.library',0,-30)
+    END;
+
+As mentioned, the functions available through the function host are
+very similar to the ones available from C and assembly.  Here is a list
+of the commands supported through the function host.  Each command has
+an AmigaDOS-style template that describes the arguments it accepts,
+along with a short description of what the command does.  Refer to the
+autodoc entries with the same names for more complete explanations of
+what each command is intended for.
+
+CloseCatalog (CATALOG/N/A)
+    Closes a previously opened message catalog.  Pass it the return
+    value from OpenCatalog().
+ConvToLower (CHARACTER/A)
+    Pass it the character to convert and it returns the converted
+    character.
+ConvToUpper (CHARACTER/A)
+    Pass it the character to convert and it returns the converted
+    character.
+GetCatalogStr (CATALOG/A,STRING/N/A,DEFAULT/A)
+    Extract a string from a catalog.  Pass it the catalog obtained from
+    OpenCatalog(), the number of the string to extract from the
+    catalog, and a default string to return in case the requested
+    string is not in the catalog. IsAlNum (CHARACTER/A) - Pass it a
+    character and it returns 1 if the character is alphanumeric, or
+    returns 0 otherwise
+IsAlpha (CHARACTER/A)
+    Pass it a character and it returns 1 if the character is
+    alphabetic, or returns 0 otherwise
+IsCntrl (CHARACTER/A)
+    Pass it a character and it returns 1 if the character is a control
+    character, or returns 0 otherwise
+IsDigit (CHARACTER/A)
+    Pass it a character and it returns 1 if the character is a digit,
+    or returns 0 otherwise
+IsGraph (CHARACTER/A)
+    Pass it a character and it returns 1 if the character can be
+    represented graphically, or returns 0 otherwise
+IsLower (CHARACTER/A)
+    Pass it a character and it returns 1 if the character is lower
+    case, or returns 0 otherwise
+IsPrint (CHARACTER/A)
+    Pass it a character and it returns 1 if the character is a space,
+    or returns 0 otherwise
+IsPunct (CHARACTER/A)
+    Pass it a character and it returns 1 if the character is a
+    punctuation mark, or returns 0 otherwise
+IsSpace (CHARACTER/A)
+    Pass it a character and it returns 1 if the character is a white
+    space, or returns 0 otherwise
+IsUpper (CHARACTER/A)
+    Pass it a character and it returns 1 if the character is upper
+    case, or returns 0 otherwise
+IsXDigit (CHARACTER/A)
+    Pass it a character and it returns 1 if the character is a
+    hexadecimal digit (0..9, a..f, A..F), or returns 0 otherwise
+OpenCatalog (NAME/A,BUILTIN/A,VERSION/N/A)
+    Opens a message catalog and returns a value to be used for
+    GetCatalogStr() and CloseCatalog(). The first parameter specifies
+    the name of the catalog to load, the second parameter specifies the
+    language used for the default strings in the script, and the final
+    parameter specifies the version number of the catalog to open.  A
+    version of 0 means any version is fine.
+StrnCmp(STRING1/A,STRING2/A,TYPE/N/A)
+    Compares two strings and returns -1 if STRING1 comes before
+    STRING2, returns 0 if both strings are equal, and returns 1 if
+    STRING1 comes after STRING2.  The TYPE parameter is either 0 to do
+    an ASCII comparison, 1 to do a single pass collation, or 2 to do a
+    two pass collation (this corresponds to the C SC_ASCII, SC_COLLATE1
+    and SC_COLLATE2 constants explained in the autodoc entry for
+    StrnCmp() ). Here is a sample ARexx script that exercises some of
+    locale's function host commands:
+
+        /* localetest.rexx */
+
+        /* Make sure locale is loaded as a function host */
+        IF ~SHOW(L,'locale.library') THEN DO
+          CALL ADDLIB('locale.library',0,-30);
+        END;
+
+        say ConvToLower("A");
+        say ConvToUpper("b");
+        say IsAlpha("1");
+
+        catalog = OpenCatalog("workbench.catalog","english",0);
+        say GetCatalogStr(catalog,34,"default");
+        say CloseCatalog(catalog);
+        say StrnCmp("abc","def",2);
+
+
+
+
+		    Writing Localized Applications
+                    ==============================
+
+   (c) Copyright 1991-93 Commodore-Amiga, Inc. All Rights Reserved
+
+One of the important goals while developing locale.library was to keep
+it simple in order to encourage its use.  The result is that
+applications can be localized with little effort on the programmer's
+part.  Of course, there are some issues to consider in order to do a
+better localization job.
+
+The central part of localizing an application is getting all of the
+user-interface running in different languages.  locale.library provides
+text catalog management routines to solve this problem.  To make use of
+these catalogs, an application must group all of its strings in one
+location within the source code, and only refer to them using symbolic
+names from within the rest of the program.  See the sample program at
+the end of this document for an example of how this can be done easily.
+
+Translated strings vary in length from their originals.  This can cause
+headaches when trying to perform screen layout, or otherwise formatting
+tables, etc...  On the average, it is safe to assume any given English
+string will double in length when translated to a variety of languages.
+This fact must always be considered when planning the visuals of a
+program.
+
+Remember to take into account the time it takes to translate the
+strings of your application when you plan development schedules.  Be
+flexible, and prepare to maintain a dialog with the translators.  It
+may be necessary to extend the size of some of your gadgets to
+accommodate special cases.  Take this into account from the start, and
+design your application so these kinds of modifications remain easy.
+
+Localization also involves number output.  From country to country,
+numbers are represented in different ways.  As such, it is not correct
+to assume anything about the length and format of numeric values.
+
+Date format is another localized item.  Whenever displaying a date or
+requesting a date from the user, the FormatDate() and ParseDate()
+routines from locale.library should be used.  These routines handle all
+the details of the variations in date format.  Again, it is not safe to
+assume the length or format of a date string.
+
+A localized application will potentially be viewed by audiences with
+radically different cultural backgrounds.  This is an important point
+to note when designing icons for an application.  Icons designed in the
+US for example, may seem perfectly obvious to an American, but may be
+totally meaningless to a Swedish user.  Be flexible with your icon
+designs.  Make sure to show them to users of your target countries
+before releasing your applications.
+
+Something else which is important is naming.  When naming programs or
+features of programs, you should verify that the chosen name is
+suitable for all of your target markets.  Some words may have totally
+different meanings, or even be insulting, when viewed in different
+languages.
+
+
+Screen Layout
+
+Screen layout is a problem when localizing applications.  Strings vary
+in length from language to language and it becomes difficult to create
+effective displays that will work well when translated. When creating a
+user-interface display on the Amiga, there are two main areas of
+concern: menus and gadgets.
+
+Menus are easily localized thanks to gadtools.library.  Its dynamic
+menu layout code makes adapting to different strings virtually
+automatic.
+
+Gadgets are not so easily handled.  As the text they contain can
+change, so can their size.  And when their size change, it can affect
+their positioning, which can then start to affect the positioning of
+surrounding gadgets, which ultimately affect the dimensions of the
+window.
+
+There are two main ways to handle localization of gadgets:
+
+   o  make all gadgets large enough to hold any string
+   o  dynamic screen layout
+
+The first approach is simplest and involves making all gadgets large
+enough to accommodate the largest translated string for that gadget.
+For example, a gadget containing the string "Use" in an English
+program should not be made just large enough to hold three characters,
+but instead should be large enough to contain the longest translation
+of the word "Use."  The 2.1 system Preferences editors make use of
+this approach to localize their gadgetry.
+
+The second approach to handle gadgets is by doing font sensitive
+layout.  This involves determining exactly the size of all strings used
+to create a display, then to scale and position every component so it
+can deal with the largest strings out there.  Font sensitive layout is
+normally thought of as a way of accomodating different fonts, but it
+also serves to accommodate different strings.  The 2.1 system
+Calculator is an example of a font sensitive application.
+
+
+Adapting GadTools
+
+GadTools' NewMenu and NewGadget structures both have Label fields
+requiring a pointer to a string.  The string is used to build the
+user-interface component.  Many programs currently declare a static
+array of these structures to pass them to either CreateMenus() or
+CreateGadget().  Static initialization will not work however within a
+localized application due to the fact the label strings are not known
+at compile-time, and are instead obtained at run-time from disk-based
+catalogs.
+
+
+Localizing GadTools Gadgets
+
+Here is a routine that lets you easily localize GadTools gadgets.
+Instead of calling the GadTools CreateGadget() routine, simply call
+CreateLocGadget().
+
+extern struct Catalog *catalog;
+
+struct Gadget *CreateLocGadget(ULONG kind, struct Gadget *previous,
+                              struct NewGadget *newGad, ULONG tag, ...)
+{
+struct NewGadget ng;
+
+    ng = *newGad;
+    ng.ng_Label = GetCatalogStr(catalog,
+                                (LONG)ng.ng_Label,
+                                GetAppStr((LONG)ng.ng_Label));
+
+    return (CreateGadgetA(kind,previous,&ng,&tag));
+}
+
+This function assumes you have an opened message catalog called
+"catalog," and that your application has a function called GetAppStr()
+that returns the built-in string of the application given a string ID
+number.
+
+Now the trick with this function is that when you declare your
+NewGadget structure, you initialize the ng_Label field to contain the
+string ID of the desired string, instead of a pointer to the string
+itself.  CreateLocGadget() will then replace the string ID by an actual
+string pointer and will call the real GadTools routine to create the
+gadget.
+
+
+Localizing GadTools Menus
+
+Localizing menus is a bit trickier than gadgets because the
+CreateMenus() call accepts an array of NewMenu structures as a
+parameter instead of a single structure at a time like CreateGadget().
+Still, the solution remains relatively simple:
+
+struct Menu *CreateLocMenus(struct NewMenu *newMenus, ULONG tag, ...)
+{
+UWORD           i;
+struct NewMenu *nm;
+struct Menu    *menus;
+
+ i = 0;
+ while (nm[i++].nm_Type != NM_END) {}
+
+ if (!(nm = AllocVec(sizeof(struct NewMenu)*i,MEMF_CLEAR|MEMF_PUBLIC)))
+     return(NULL);
+
+ while (i--)
+ {
+     nm[i] = newMenus[i];
+
+     if (nm[i].nm_Label != NM_BARLABEL)
+     {
+         nm[i].nm_CommKey = GetCatalogStr(catalog,
+                                     (LONG)nm[i].nm_Label,
+                                     GetAppStr((LONG)nm[i].nm_Label));
+
+    nm[i].nm_Label = nm[i].nm_CommKey+2;
+
+         if (nm[i].nm_CommKey[0] == ' ')
+             nm[i].nm_CommKey = NULL;
+     }
+ }
+
+
+
+ if (menus = CreateMenusA(nm,&tag))
+ {
+     if (!(LayoutMenus(menus,visualInfo,GTMN_NewLookMenus,TRUE,
+                                        TAG_DONE)))
+     {
+         FreeMenus(menus);
+                menus = NULL;
+            }
+ }
+
+ FreeVec(nm);
+
+ return(menus);
+}
+
+Like the gadget example above, this function expects to have both an
+open catalog and a GetAppStr() function available.  In addition, this
+function expects to find the menu strings in a specific format.  That
+is, all strings must be preceded by their keyboard shortcuts and a NULL
+byte.  For example:
+
+        "X\0Cut"
+        "C\0Copy"
+        "V\0Paste"
+
+This is compact, and lets the keyboard shortcuts be easily localized
+and associated with the menu item.  If a menu item has no keyboard
+shortcut, it needs to be specified using a leading space such as:
+
+        " \0Erase"
+
+As with gadgets, the trick with this function is to initialize all the
+nm_Label fields to be string IDs instead of direct string pointers.
+CreateLocMenus() then allocates a new array, replacing the string IDs
+with string pointers, and passes the result to GadTools for the actual
+menu strip creation and layout.
+
+
+Character Sets
+
+A character set defines the meaning and graphical representation
+associated with a sequence of numbers.  From the beginning, the Amiga
+has used the ECMA-Latin 1 character set which is a superset of regular
+ASCII designed by the European Computer Manufacturer's Association.
+This character set is sufficient to represent alphabets used by
+languages spoken in Western Europe.
+
+Commodore has never endorsed character sets other than ECMA-Latin 1,
+which means that alphabets used in Eastern Europe, in the Middle-East,
+or in Asia, cannot be represented in a standard way on an Amiga.
+Designing fonts with the needed characters in them is not sufficient,
+because without a formal standard, there is no way to guarantee that a
+given character will be used in every variation of a font for a given
+alphabet.  To clarify, without a standard, it is not possible to assume
+that the Greek Omega letter will be represented by the same character
+value from one Greek font to the next.
+
+The locale.library assumes nothing about the character set being used.
+The character set is dependant on the current language driver and
+catalog.  At this time, the only character set formally recognized is
+ECMA-Latin 1.  New character sets can be specified easily.
+
+It is possible that new character sets may require more than one byte
+of storage per character.  This would be the case for the Unicode
+character set.  Applications written now only need to deal with the
+current 1-byte character set.  In the future, applications may want to
+support new extended character sets as they are standardized upon by
+Commodore.
+
+
+CatComp: the Catalog Compiler
+
+CatComp is a program to handle the creation and maintenance of the
+message catalogs used by locale.library. Message catalogs are IFF files
+read by locale.library that contain all the text strings used by an
+application. By providing several of these catalog files, an
+application can use locale.library and transparently adapt itself to
+the user's preferred language.
+
+For more information on CatComp, consult catcomp.doc that comes with the
+CatComp program.
+

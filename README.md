@@ -1,2 +1,1 @@
-# act
-Amiga Crossdevelopment Toolchain
+

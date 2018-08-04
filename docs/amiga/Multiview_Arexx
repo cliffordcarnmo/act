@@ -1,0 +1,133 @@
+
+V40 Multiview ARexx Commands
+----------------------------
+(c) Copyright 1992-93 Commodore-Amiga, Inc.  All Rights Reserved
+
+OPEN
+  NAME/K,CLIPBOARD/S,CLIPUNIT/K/N
+  Open a file.
+
+RELOAD
+  ,
+  Reload the current object.
+
+SAVEAS
+  NAME/K,IFF/S
+  Save the current object to disk.  The IFF switch is used to force the
+  save to be IFF instead of RAW.
+
+PRINT
+  ,
+  Print the current object.
+
+ABOUT
+  ,
+  About the current object.
+
+QUIT
+  ,
+  Quit MultiView.
+
+MARK
+  ,
+  Start Mark mode.
+
+COPY
+  ,
+  Copy the currently selected block to the clipboard.
+
+CLEARSELECTED
+  ,
+  Deselect the selected block.
+
+GETTRIGGERINFO
+  VAR/S,STEM/K
+  Provide a list of trigger methods that the current object supports.
+
+  VAR causes the information to be returned in RESULT.
+
+  STEM cause the information to be returned in the named stem variable.
+  The following values are supported.
+
+  stem.count		number of elements in the array.
+  stem.n.label		label
+  stem.n.command	command
+  stem.n.method		method
+
+DOTRIGGERMETHOD
+  METHOD/A
+  Perform a trigger method on the current object.
+
+SCREEN
+  TRUE/S,FALSE/S
+  Cause the object to be displayed on a screen or not.
+
+PUBSCREEN
+  NAME/A
+  Cause the object to be displayed on the specified public screen.
+
+SNAPSHOT
+  ,
+  Save the current window position to Env.
+
+GETCURRENTDIR
+  ,
+  Return the current directory for the current object.
+
+GETFILEINFO
+  ,
+  Get the file information for the current object.
+
+GETOBJECTINFO
+  VAR/S,STEM/K
+  Return information about the current object.
+
+  VAR causes the information to be returned RESULT.
+
+    "name","basename","group","id"
+
+  STEM causes the information to be returned in the named stem variable.
+
+    stem.filename	file name of the current object.
+    stem.name		object type name.
+    stem.basename	object type basename.
+    stem.group		object type group.
+    stem.id		object type id.
+
+MINIMUMSIZE
+  ,
+  Resize the object's window to its minimum size.
+
+NORMALSIZE
+  ,
+  Resize the object's window to its nominal size.
+
+MAXIMUMSIZE
+  ,
+  Resize the object's window to its maximum size.
+
+WINDOWTOFRONT
+  ,
+  Bring the object's window to front.
+
+WINDOWTOBACK
+  ,
+  Send the object's window to back.
+
+ACTIVATEWINDOW
+  ,
+  Activate the object's window.
+
+SCREENTOFRONT
+  ,
+  Bring the object's screen to front.
+
+SCREENTOBACK
+  ,
+  Send the object's screen to back.
+
+BEEPSCREEN
+  ,
+  Cause a display beep on the object's screen.
+
+

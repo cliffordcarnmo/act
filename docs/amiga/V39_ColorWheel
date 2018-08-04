@@ -1,0 +1,614 @@
+New V39 Boopsi Classes:
+Color Wheel and Gradient Slider Amiga OS 3.0
+
+(c) Copyright 1992-93 Commodore-Amiga, Inc.  All Rights Reserved
+
+The color wheel and gradient slider are new gadget classes added to the
+boopsi facility in the V39 release of Intuition.  They provide enhanced
+color selection gadgets for use with the expanded color capabilities of
+the new AA chip set and are also backward-compatible with ECS.  This
+article explains how to use these two new gadget classes. 
+
+The color wheel and gradient slider are based on boopsi (boopsi is an
+acronym for Basic Object-Oriented Programming System for Intuition) so it
+helps to know a little about how boopsi works before trying to use them.
+For information on boopsi, refer to chapter 12 and appendix B of the Amiga
+ROM Kernel Reference Manual: Libraries (ISBN 0-201-56774-1). 
+
+
+The Amiga Color Model
+=====================
+
+The color model in all versions of the Amiga operating system through V38
+(Release 2.1) has been RGB-based, that is, color was specified as some
+combination of red, green and blue.  These are known as the primary
+additive colors.  If you start at a value of zero for each primary (the
+color black) adding varying levels of them enables you to specify any of
+the Amiga's colors till you've added them all at their highest level which
+is the color white. 
+
+The opposite of the primary additive colors are the subtractive primary
+colors, cyan, magenta, and yellow, respectively.  These colors are created
+by completely subtracting one of the primary colors from white.  Cyan is
+green-blue, magenta is red-blue, and yellow is red-green.  Subtracting all
+of them brings you back to the color black. 
+
+Another method of specifying colors is in terms of hue, saturation and
+brightness, HSB.  Hue is the dominant wavelength in the light we receive;
+we associate color names with hue.  Saturation is a measure of the purity
+of the dominant wavelength, that is, the more dominant the wavelength, the
+more pure or saturated it is.  Brightness is a measure of the luminance or
+brilliance of the wavelength. 
+
+The RGB method of color specification is used because it corresponds to
+the red, green and blue receptor cones in our eyes.  Through the varying
+intensities of these wavelengths that the receptors receive, we are able
+to see colors.  It's a natural way for us to represent colors and until
+V39, was the only OS-supported way on the Amiga.  Some applications allow
+users to specify colors in terms of HSV (V is value and corresponds to
+brightness), but the HSV calculations are done by the application itself. 
+
+Under V39, the Amiga color model includes both RGB and HSB
+representations.  It also expands from a 12-bit color definition--four
+bits each for red, green and blue--to a 25-bit color definition - eight
+bits each for red, green and blue plus one bit for genlocking.  With the
+expanded color model, programmers and users have finer control over color
+selection than ever before. 
+
+To implement the new color model, V39 adds two new boopsi gadget classes,
+the color wheel and gradient slider.  These classes provide the user
+interface gadgets needed to support the HSB representation of color and
+the expanded palettes of AA machines. 
+
+It's convenient to think of the HSB representaion of color as a cylinder.
+The cylinder is divided radially into hues, with the saturation level of a
+hue increasing from zero at the center of the cylinder to its maximum at
+the outer edge of the cylinder.  The height of the cylinder represents the
+brightness of the hue.  At the top of the cylinder, brightness is
+maximized; at the bottom, brightness is minimized.  We see the minimum
+brightness of a hue as black, regardless of the hue; the maximum
+brightness of a hue, however, is not white.  (This arrangement is similar
+to what the color theory literature refers to as the Munsell color model.)
+
+
+Selecting HSB Colors with the Wheel and Slider
+==============================================
+
+The color wheel gadget is a two dimensional representation of the hue and
+saturation elements of the HSB color cylinder and corresponds to a
+circular cross-section of the cylinder.  The gradient slider gadget
+represents the brightness element of the HSB color cylinder and
+corresponds to cylinder height. 
+
+Visually, the color wheel gadget is a display of all of the hues and their
+saturations with a selector knob that can be moved anywhere on the wheel.
+The gradient slider is typically a vertically oriented slider displaying a
+smooth transition of a color from its brightest to its darkest.  The
+gradient slider knob selects the brightness level. 
+
+With the color wheel gadget, the user can quickly move the knob to the
+approximate color desired and then adjust the brightness level
+independently with the gradient slider.  The color wheel and gradient
+slider gadgets provide a more intuitive method for selecting colors than
+the pre-V39 method of providing three sliders for the R, G and B
+components of a color.  The HSB and RGB approaches to color selection can
+be combined for even finer control of color.  A conspicuous example of
+this is the Palette Preferences editor in the Release 3 version of
+Workbench. 
+
+For the developer, the new color wheel and gradient slider gadgets do the
+heavy lifting like all Boopsi gadgets.  As the user moves the mouse across
+the color wheel, the gadget will return the RGB or HSB values (depending
+on which you request) corresponding to the knob location, and the gradient
+slider will return the current position of the knob as a value between the
+highest brightness value and the lowest brightness value.  In addition,
+the color wheel has two functions that convert RGB values to HSB and vice
+versa. 
+
+
+
+Programming the Gadgets
+=======================
+
+The new functions, structures and tag items used with the color wheel and
+gradient slider are defined in the header files <gadgets/gradientslider.h>
+and <gadgets/colorwheel.h> and in the Autodoc files colorwheel_gc.doc and
+in gradientslider_gc.doc.  For a complete listing see the end of this
+article. 
+
+The color wheel and gradient slider gadgets are stored in the
+Classes/Gadgets drawer of Workbench as colorwheel.gadget and
+gradientslider.gadget, not in the ROM with Intuition.  They must be opened
+with OpenLibrary() before they can be used and later closed with
+CloseLibrary() before your program exits. 
+
+   struct Library *ColorWheelBase, *GradientSliderBase;
+
+   main()
+   {
+   if (ColorWheelBase = OpenLibrary("gadgets/colorwheel.gadget",39L))
+   if (GradientSliderBase=OpenLibrary("gadgets/gradientslider.gadget",39L))
+
+   /* Color wheel and gradient slider program goes here */
+
+   CloseLibrary(ColorWheelBase);
+   CloseLibrary(GradientSliderBase);
+   }
+    
+Once opened, you use them as you would any boopsi gadgets, that is, create
+them using NewObject() specifying their attributes with a list of tag
+items.  Once the gadgets are created with NewObject(), they can be added
+to an application window in the usual manner.  Before your application
+ends, dispose of the gadgets with DisposeObject(). 
+
+
+The Color Wheel Gadget
+======================
+
+The color wheel gadget has two rendering modes of display: monochrome and
+color.  The monochrome rendering mode exists for instances where the color
+wheel is being used on an ECS system or when there aren't enough colors
+available to render the wheel properly. 
+
+Remember that with the new pen sharing capability of the V39 OS, some or
+all of the colors in a screen may be allocated for use by Intuition.  In
+that case don't be surprised when you get a monochrome color wheel.  (For
+more about pen sharing see the the description of ObtainPen() in
+graphics.doc and SA_SharePens in intuition.doc on the release disks.)
+
+A one or two bitplane screen will result in a monochrome wheel.  You will
+get a minimal color wheel with three or four bitplanes.  Five through
+eight bitplane screens result in successively more colors in the color
+wheel as the number of bitplanes increase.  To see what an 8-bitplane
+color wheel looks like, try the V39 Palette Preferences editor which uses
+all the colors available to render the best looking color wheel possible. 
+
+
+A color wheel is broken into six sectors, one each for the additive and
+subtractive primaries.  In a monochrome wheel, the sectors are denoted by
+the first letter of its associated primary (R,G,B,Y,M,C). 
+
+
+
+
+
+Monochrome Color Wheel
+======================
+
+Applications designed for international markets can localize the sector
+markers by using the WHEEL_Abbrv tag at the time the color wheel is
+created with NewObject().  The default string is "GCBMRY." Make sure your
+localized tag is in the proper order. 
+
+When you create the color wheel, you determine the initial position of the
+knob with a set of either RGB or HSB tag values.  These values default if
+you do not supply them.  The RGB defaults are full red, no green, no blue;
+the HSB defaults are hue 0, full saturation, full brightness.  The default
+knob position is, accordingly, the topmost edge of the red section. 
+
+RGB and HSB values can be passed to the gadget either as separatetag
+items, or in an RGB or HSB structure.  The tags and the structures are
+defined in <gadgets/colorwheel.h>. 
+
+	WHEEL_Hue			/* set the hue component */
+	WHEEL_Saturation		/* set the saturation component */
+	WHEEL_Brightness		/* set the brightness component */
+	WHEEL_HSB			/* set HSB using an HSB structure */
+
+	WHEEL_Red			/* set the red component */
+	WHEEL_Green			/* set the green component */
+	WHEEL_Blue			/* set the blue component */
+	WHEEL_RGB			/* set RGB using an RGB structure */
+
+	struct ColorWheelHSB
+	{
+	    ULONG cw_Hue;
+	    ULONG cw_Saturation;
+	    ULONG cw_Brightness;
+	};
+
+	struct ColorWheelRGB
+	{
+	    ULONG cw_Red;
+	    ULONG cw_Green;
+	    ULONG cw_Blue;
+	};
+
+
+Keep in mind that although you can specify brightness, it will not be
+displayed because the color wheel's two dimensions are hue and saturation.
+Instead, the color wheel gadget can automatically pass the brightness
+value to a gradient slider gadget for processing.  To do this, use the
+WHEEL_GradientSlider tag with the address of a gradient slider gadget when
+the color wheel is created.  Then, any time the wheel brightness is
+modified, the slider knob position will automatically display the change. 
+
+Once you have created the color wheel and added it to an application
+window you can find out what it is set to with the GetAttr() function.
+The color wheel will return either RGB or HSB values depending on how you
+query it.  If you wish to continuously receive mouse position reports as
+the user moves the knob, set the GA_FollowMouse tag when you create the
+color wheel.  Your application will then receive a message at the window
+UserPort whenever the knob is moved. 
+
+
+The Gradient Slider Gadget
+==========================
+
+The gradient slider gadget is a non-proportional gadget for selecting the
+brightness component of an HSB color.  It has a special attribute--it can
+render a pen array that you pass to it as a color gradient within its box.
+Given enough pens, the gradient slider will render an HSB color as a
+smooth transition, typically from brightest to darkest (though you may
+choose to go from darkest to brightest).  The intent of the gradient is to
+allow the user to move the knob to the appropriate brightness level of a
+color without effecting the hue or saturation. 
+
+The position of the gradient slider knob is set with the GRAD_CurrVal tag.
+However, there are two potential problems that you must take into account
+when using this tag.  The first is that the top of the slider is zero and
+the bottom of the slider is the largest value in its range.  This is the
+opposite of what you might expect.  The other is that the gradient slider
+works with 16-bit position values, not 32-bit color values like the color
+wheel.  Make sure you account for this. 
+
+If you modify the brightness of the color wheel, the gradient slider can
+automatically pick up the change if a link has been established using the
+color wheel's WHEEL_GradientSlider tag.  The gradient slider converts the
+32-bit color brightness value to a 16-bit posiiton value and sets the
+gradient slider's knob accordingly. 
+
+
+Creating The Gradient Slider Pen Array
+======================================
+
+The pen array you pass to the gradient slider is a set of pen numbers you
+obtain using the V39 graphics function ObtainPen().  You could also use
+pens allocated by another application as shared pens but in most cases,
+you will use the ObtainPen() function. 
+
+Before you create the pen array, you need to decide whether to use a color
+from the current palette or design a color of your own.  In the former
+case, you access the color registers of the screen's ColorMap; in the
+latter case, you set the RGB or HSB values yourself.  In this article,
+color 0 (color register 0) of the screen's palette will be used. 
+
+To access a ColorMap's registers, you call the V39 function GetRGB32(),
+passing it the ColorMap, the starting color register, the number of
+registers and an array large enough to hold three times the number of
+registers you request.  Since a color register is the combination of three
+color table entries; GetRGB32() returns three 32-bit values for every
+register you request. 
+
+	ULONG colortable[12];  /* space for the first four colors */
+	struct Screen *Colorscreen;
+
+	/* Get the first four colors */
+	GetRGB32(Colorscreen->ViewPort.ColorMap,0L,4L,colortable);
+
+Once you decide which color to use, the RGB values must be converted to
+HSB values in order to modify the brightness.  You do this with the color
+wheel function ConvertRGBToHSB() which converts the RGB values stored in a
+ColorWheelRGB structure to HSB values and returns them in a ColorWheelHSB
+structure. 
+
+	struct ColorWheelRGB rgb;
+	struct ColorWheelHSB hsb;
+
+	/* set RGB values for color 0 in ColorWheelRGB structure */
+	rgb.cw_Red   = colortable[0];
+	rgb.cw_Green = colortable[1];
+	rgb.cw_Blue  = colortable[2];
+
+	/* now convert the RGB values to HSB */
+	ConvertRGBToHSB(&rgb,&hsb);
+
+Since the topmost color is going to be the brightest, its brightness must
+be set to the maximum value, 0xFFFFFFFF. 
+
+	/* max out the brightness component */
+	hsb.cw_Brightness = 0xffffffff;
+
+The final decision is the number of pens to use to render the gradient.  A
+good rule of thumb is eight pens as a minimum and sixteen as a maximum.
+Eight will give you a nice display and sixteen will give you a very nice
+display.  If you're wondering, the Palette Preferences editor uses as many
+as thirty-two pens. 
+
+With the starting color converted to HSB, its brightness maximized and the
+number of pens set, the pen array can be built by converting each new HSB
+value back to an RGB value using the ConvertHSBToRGB() function and
+calling ObtainPen().  Remember that member 0 of the array will be the
+starting color and each successive member will be proportionately dimmer. 
+
+To facilitate updating the pen array later on, a structure for use with
+the V39 LoadRGB32() function can be set up for each pen number.  The code
+below demonstrates how the array is built using this technique. 
+  
+     #define GRADCOLORS   16  /* set to 4 for ECS to ensure enough
+				 color wheel pens */
+     struct load32 color_list[GRADCOLORS + 1];
+     WORD penns[GRADCOLORS + 1];
+     WORD numPens;
+
+     numPens = 0;
+     while (numPens < GRADCOLORS)
+     {
+         hsb.cw_Brightness = 0xffffffff - ((0xffffffff / GRADCOLORS) * numPens);
+         ConvertHSBToRGB(&hsb,&rgb);
+
+         penns[numPens] = ObtainPen(Myscreen->ViewPort.ColorMap,-1,
+                          rgb.cw_Red,rgb.cw_Green,rgb.cw_Blue,PEN_EXCLUSIVE);
+         if (penns[numPens] == -1)
+             break;
+
+         /* Set up LoadRGB32() structure for this pen */
+         color_list[numPens].l32_len = 1;
+         color_list[numPens].l32_pen = penns[numPens];
+         numPens++;
+     }
+     penns[numPens] = ~0;
+     color_list[numPens].l32_len = 0;
+
+The pen array is now complete and ready to be passed to the gradient
+slider when you create it. 
+
+
+Updating The Pen Array
+======================
+
+In our scheme, we said the color gradient is updated every time the user
+moves the mouse to a new position on the color wheel.  This is done by
+updating the pen array whenever a mousemove message is received. 
+
+The algorithm is to query the color wheel for the current HSB setting and
+then loop through all the pens as we did above to gradually decrease the
+brightness.  There is one difference, though, instead of obtaining pens,
+we will change the colors of the pens using either SetRGB32() or
+LoadRGB32(), both of which were added for V39. 
+
+If you use SetRGB32(), you must call it for each pen you change; if you
+use LoadRGB32(), you can pass it a structure containing a variable number
+of pens to change in one call.  As we said, we will use LoadRGB32(). 
+  
+     case IDCMP_MOUSEMOVE:
+
+        /* Change gradient slider color each time colorwheel knob 
+         * is moved. This is onemethod you can use.*/
+
+        /* Query the colorwheel */
+        GetAttr(WHEEL_HSB,colwheel,(ULONG *)&hsb);
+
+        i = 0;
+
+        while (i < numPens)
+        {
+            hsb.cw_Brightness = 0xffffffff - ((0xffffffff / numPens) * i);
+            ConvertHSBToRGB(&hsb,&rgb);
+
+            color_list[i].l32_red = rgb.cw_Red;
+            color_list[i].l32_grn = rgb.cw_Green;
+            color_list[i].l32_blu = rgb.cw_Blue;
+            i++;
+        }
+        LoadRGB32(&Myscreen->ViewPort,(ULONG *)color_list);
+        break;
+
+
+
+An Example 
+==========
+
+The example program below creates a color wheel and gradient slider on
+the deepest screen possible.  As you move the color wheel knob around
+the wheel, it will update the gradient of the gradient slider. 
+
+;/*
+SC RESOPT PARM=REGISTERS UCHAR CONSTLIB STREQ ANSI NOSTKCHK NOICONS OPT OPTPEEP wheelgrad.c
+Slink LIB:c.o wheelgrad.o TO WheelGrad LIB LIB:sc.lib SC SD
+Quit
+*/
+
+/* WheelGrad.c - simple example of colorwheel and gradient slider
+ *
+ * Puts up a colorwheel and gradient slider and changes the gradient slider
+ * color based on where the colorwheel knob is moved.
+ */
+
+#include <exec/types.h>
+#include <intuition/intuition.h>
+#include <intuition/intuitionbase.h>
+#include <intuition/screens.h>
+#include <graphics/displayinfo.h>
+#include <intuition/gadgetclass.h>
+#include <gadgets/colorwheel.h>
+#include <gadgets/gradientslider.h>
+
+#include <clib/intuition_protos.h>
+#include <clib/exec_protos.h>
+#include <clib/dos_protos.h>
+#include <clib/graphics_protos.h>
+#include <clib/colorwheel_protos.h>
+
+#include <pragmas/intuition_pragmas.h>
+#include <pragmas/exec_pragmas.h>
+#include <pragmas/dos_pragmas.h>
+#include <pragmas/graphics_pragmas.h>
+#include <pragmas/colorwheel_pragmas.h>
+
+#include <stdio.h>
+
+
+/****************************************************************************/
+
+
+#define MAXGRADPENS 4
+
+
+/****************************************************************************/
+
+
+extern struct Library *DOSBase;
+extern struct Library *SysBase;
+struct Library        *IntuitionBase;
+struct Library        *GfxBase;
+struct Library        *ColorWheelBase;
+struct Library        *GradientSliderBase;
+
+
+/****************************************************************************/
+
+
+VOID main(VOID)
+{
+struct Screen        *screen;
+struct Window        *window;
+struct IntuiMessage  *intuiMsg;
+struct Gadget        *wheel;
+struct Gadget        *slider;
+struct ColorWheelRGB  rgb;
+struct ColorWheelHSB  hsb;
+BOOL                  quit;
+ULONG                 colortable[3];
+WORD                  pens[16];
+WORD                  numPens;
+WORD                  i;
+
+    if (IntuitionBase      = OpenLibrary("intuition.library",39))
+    {
+        GfxBase            = OpenLibrary("graphics.library",39);
+        ColorWheelBase     = OpenLibrary("gadgets/colorwheel.gadget",39);
+        GradientSliderBase = OpenLibrary("gadgets/gradientslider.gadget",39);
+    }
+
+    if (IntuitionBase && GfxBase && ColorWheelBase && GradientSliderBase)
+    {
+        if (screen = OpenScreenTags(NULL,SA_Depth,         4,
+                                         SA_LikeWorkbench, TRUE,
+                                         SA_Title,         "WheelGrad",
+                                         TAG_DONE))
+        {
+            /* get the RGB components of color 0 */
+            GetRGB32(screen->ViewPort.ColorMap,0,1,colortable);
+            rgb.cw_Red   = colortable[0];
+            rgb.cw_Green = colortable[1];
+            rgb.cw_Blue  = colortable[2];
+
+            /* now convert the RGB values to HSB, and max out B component */
+            ConvertRGBToHSB(&rgb,&hsb);
+            hsb.cw_Brightness = 0xffffffff;
+
+            numPens = 0;
+            while (numPens < MAXGRADPENS)
+            {
+                hsb.cw_Brightness = 0xffffffff - ((0xffffffff / MAXGRADPENS) * numPens);
+                ConvertHSBToRGB(&hsb,&rgb);
+
+                pens[numPens] = ObtainPen(screen->ViewPort.ColorMap,-1,
+                                 rgb.cw_Red,rgb.cw_Green,rgb.cw_Blue,PEN_EXCLUSIVE);
+
+                if (pens[numPens] == -1)
+                    break;
+
+                numPens++;
+            }
+            pens[numPens] = ~0;
+
+            /* Create gradient slider and colorwheel gadgets */
+            slider = (struct Gadget *)NewObject(NULL,"gradientslider.gadget",
+                                                GA_Top,        50,
+                                                GA_Left,       177,
+                                                GA_Width,      20,
+                                                GA_Height,     100,
+                                                GRAD_PenArray, pens,
+                                                PGA_Freedom,   LORIENT_VERT,
+                                                TAG_END);
+
+            wheel = (struct Gadget *)NewObject(NULL, "colorwheel.gadget",
+                                               GA_Top,               50,
+                                               GA_Left,              50,
+                                               GA_Width,             120,
+                                               GA_Height,            100,
+                                               WHEEL_Red,            colortable[0],
+                                               WHEEL_Green,          colortable[1],
+                                               WHEEL_Blue,           colortable[2],
+                                               WHEEL_Screen,         screen,
+                                               WHEEL_GradientSlider, slider,
+                                               GA_FollowMouse,       TRUE,
+                                               GA_Previous,          slider,
+                                               TAG_END);
+
+
+            if (slider && wheel)
+            {
+                if (window = OpenWindowTags(NULL,WA_Height,       200,
+                                                 WA_Width,        400,
+                                                 WA_CustomScreen, screen,
+                                                 WA_IDCMP,        IDCMP_CLOSEWINDOW | IDCMP_MOUSEMOVE,
+                                                 WA_SizeGadget,   TRUE,
+                                                 WA_DragBar,      TRUE,
+                                                 WA_CloseGadget,  TRUE,
+                                                 WA_Gadgets,      slider,
+                                                 WA_Activate,     TRUE,
+                                                 TAG_DONE))
+                {
+                    quit = FALSE;
+                    while (!quit)
+                    {
+                        WaitPort(window->UserPort);
+                        intuiMsg = (struct IntuiMessage *)GetMsg(window->UserPort);
+
+                        switch (intuiMsg->Class)
+                        {
+                            case IDCMP_CLOSEWINDOW: quit = TRUE;
+                                                    break;
+
+                            case IDCMP_MOUSEMOVE:
+                                 /* Change gradient slider color each time
+                                  * colorwheel knob is moved.  This is one
+                                  * method you can use.
+                                  */
+
+                                 /* Query the colorwheel */
+                                 GetAttr(WHEEL_HSB,wheel,(ULONG *)&hsb);
+
+                                 i = 0;
+                                 while (i < numPens)
+                                 {
+                                     hsb.cw_Brightness = 0xffffffff - ((0xffffffff / numPens) * i);
+                                     ConvertHSBToRGB(&hsb,&rgb);
+
+                                     SetRGB32(&screen->ViewPort,pens[i],rgb.cw_Red,rgb.cw_Green,rgb.cw_Blue);
+                                     i++;
+                                 }
+                                 break;
+                        }
+                        ReplyMsg(intuiMsg);
+                    }
+                    CloseWindow(window);
+                }
+            }
+
+            /* Get rid of the gadgets */
+            DisposeObject(wheel);
+            DisposeObject(slider);
+
+            /* Always release the pens */
+            while (numPens > 0)
+            {
+                numPens--;
+                ReleasePen(screen->ViewPort.ColorMap,pens[numPens]);
+            }
+
+            CloseScreen(screen);
+        }
+    }
+
+    if (IntuitionBase)
+    {
+        CloseLibrary(GradientSliderBase);
+        CloseLibrary(ColorWheelBase);
+        CloseLibrary(GfxBase);
+        CloseLibrary(IntuitionBase);
+    }
+}

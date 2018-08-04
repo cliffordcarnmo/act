@@ -1,0 +1,336 @@
+
+			   OS Game Techniques
+                           ==================
+
+	(c) Copyright 1992-93 Commodore-Amiga, Inc.  All Rights Reserved
+
+
+Reasons to use the OS for games:
+
+o	Why reinvent the wheel? Spend your time doing things that only you can
+	do.
+
+o	Compatibility with future chipsets. For instance, some planned future
+	chipsets are not register-level compatible with AA.
+
+o	Easier adaptation to future hardware. For instance, it takes
+	less time to convert a 16 color ECS game which uses the OS into
+	a 256 color AGA game than it does to convert a hardware-banging
+	ECS game.
+
+o	RTG compatibility possible for some games.
+
+o	The OS automatically supports pre-ECS, ECS,
+	AA, and future chips.
+
+o	Easier integration with other system components (CD-ROM, networks,
+	serial ports, etc).
+
+o	Easy hard-disk install.
+
+o	Less code to write. OS has routines for handling all screen positions
+	and scrolls, mouse movement, etc. = less development time. You can spend
+	more time making the game more playable and less on getting the hardware
+	to work.
+
+o	More robustness. For instance, the OS floppy-disk code is far less
+	picky about drive parameters than 99% of custom floppy i/o code.
+
+o	Hides bugs and quirks of the chipset.  The AA chip set has a few bugs which
+	the OS hides from you.
+
+o	The code runs out of ROM, which is faster than running the code out of
+	CHIP RAM.
+
+o	Multiple platforms. OS code will run on all Amiga-based machines,
+	whatever their flavour.
+
+o	Tools exist to help you debug your code rely on the OS being around (eg
+	Mungwall and Enforcer).
+
+o	A properly written game can be promoted, and thus work on cheap VGA
+	monitors.
+
+
+
+Things the OS can't currently do:
+
+o	Scroll individual scanlines of a viewport
+
+o	AA colour copperlist fades
+
+o	dynamically update user copper lists.
+
+	All these are planned to be addressed in future OS releases.
+One of our goals is to make it possible to perform as many amiga tricks
+in normal intuition screens as is possible.
+
+ECS-AA incompatibilities that the OS handles:
+
+o	Vertical counter behaves differently in programmable beam modes.
+
+o	No SuperHires color scrambling.
+
+o	Bitplane alignment problems.
+
+
+
+Future envisioned chip changes that the OS will handle correctly:
+
+o	Chips with no fetch-mode selections. All selections automatic.
+
+o	Different DDFSTART/STOP calculations.
+
+o	Color loading differences
+
+o	Exact copper timings differences
+
+o	No SuperHires
+
+o	Multiple blitters
+
+
+Game programming problems and solutions:
+
+Q:	What is the graphics rendering routines are much slower than my own
+	blitter code?
+
+A:	Use the blitter yourself. Call OwnBlitter, do setup, call WaitBlit(),
+	poke the blitter registers, and then DisownBlitter() when all blits are
+	done.
+
+	Note: OwnBlitter() is only 3 instructions (counting rts) when no-one
+	else is trying to use the blitter.
+
+
+
+Q:	What if input.device eats too many cycles?
+
+A:	Install a high priority input handler which chokes off all events. This
+	handler is also a convenient way to get keys and mouse events yourself.
+	Simply store the raw keypresses and mouse moves in your own variables.
+
+Q:	How do I change both bitmap pointers and colors in sync?
+
+A:	Use a user-copper list to cause a copper interrupt on line 0 of your
+	viewport. The copper interrupt handler will signal a high-priority
+	task which calls LoadRGB32 and ChangeVPBitMap (or ScrollVPort) to
+	cause the changes. This allows perfect 60hz animation on an A1200,
+	even while moving the mouse as fast as possible, and inserting floppy
+	disks.
+
+	Under 3.0, you can also do this in an exclusive screen. You can
+	tell if it was your screen which caused the copper interrupt by
+	checking the flag VP_HIDE in your ViewPort->Modes.
+
+	
+Q:	I need to use the blitter in an interrupt driven manner instead of
+	polling it for completion. Aren't the QBlit routines too slow?
+
+A:	The QBlit/QBSBlit system was completely re-written for 3.0, and now
+	has quite low overhead.
+
+Q:	How do I determine elapsed time in my game?
+
+A:	A simple, low overhead way to determine elapsed time is to call ReadEClock.
+	This returns a 64 bit timer value which counts E Clocks, and returns how
+	many EClocks happen per second. If you use these results properly,
+	you can ensure that your game runs at the proper speed regardless of
+	CPU type, chip speed, or PAL/NTSC clocking.
+
+
+A1200 speed issues:
+
+	The A1200 has a fairly large number of wait-states when accessing chip-ram.
+ROM is zero wait-states. Due to the slow RAM speed, it may be better to use
+calculations for some things that you might have used tables for on the A500.
+
+	Add-on RAM will probably be faster than chip-ram, so it is worth segmenting
+your game so that parts of it can go into fast-ram if available.
+
+	For good performance, it is critical that you code your important loops
+to execute entirely from the on-chip 256-byte cache. A straight line loop 258 bytes
+long will execute far slower than a 254 byte one.
+
+	The '020 is a 32 bit chip. Longword accesses will be twice as fast when they
+are aligned on a long-word boundary. Aligning the entry points of routines on
+32 bit boundaries can help, also. You should also make sure that the stack is always 
+long-word aligned.
+
+	Write-accesses to chip-ram incur wait-states. However, other processor 
+instructions can execute while results are being written to memory:
+
+	move.l	d0,(a0)+	; store x coordinate
+	move.l	d1,(a0)+	; store y coordinate
+	add.l	d2,d0		; x+=deltax
+	add.l	d3,d1		; y+=deltay
+
+	will be slower than:
+
+	move.l	d0,(a0)+	; store x coordinate
+	add.l	d2,d0		; x+=deltax
+	move.l	d1,(a0)+	; store y coordinate
+	add.l	d3,d1		; y+=deltay
+		
+	The 68020 adds a number of enhancements to the 68000 architecture, including
+new addressing modes and instructions. Some of these are unconditional speedups, while
+others only sometimes help:
+
+	Adressing modes:
+
+o	Scaled Indexing. The 68000 addressing mode (disp,An,Dn) can have a scale
+	factor of 2,4,or 8 applied to the data register on the 68020. This is totally
+	free in terms of instruction length and execution time. An example is:
+
+	68000			68020
+	-----			-----
+	add.w	d0,d0		move.w	(0,a1,d0.w*2),d1
+	move.w	(0,a1,d0.w),d1
+
+o	16 bit offsets on An+Rn modes. The 68000 only supported 8 bit displacements
+	when using the sum of an address register and another register as a memory
+	address. The 68020 supports 16 bit displacements. This costs one extra cycle
+	when the instruction is not in cache, but is free if the instruction is in
+	cache. 32 bit displacements can also be used, but they cost 4 additional clock
+	cycles.
+
+o	Data registers can be used as addresses. (d0) is 3 cycles slower than (a0),
+	and it only takes 2 cycles to move a data register to an address register,
+	but this can help in situations where there is not a free address register.
+
+o	Memory indirect addressing. These instructions can help in some circumstances
+	when there are not any free register to load a pointer into. Otherwise,
+	they lose.
+
+	New instructions:
+
+o	Extended precision divide an multiply instructions. The 68020 can perform
+	32x32->32, 32x32->64 multiplication and 32/32 and 64/32 division. These
+	are significantly faster than the multi-precision operations which are
+	required on the 68000.
+
+o	EXTB. Sign extend byte to longword. Faster than the equivalent EXT.W EXT.L
+	sequence on the 68000.
+
+o	Compare immediate and TST work in program-counter relative mode on the 68020.
+
+o	Bit field instructions. BFINS inserts a bitfield, and is faster than 2 MOVEs
+	plus and AND and an OR. This instruction can be used nicely in fill routines
+	or text plotting. BFEXTU/BFEXTS can extract and optionally sign-extend a bitfield
+	on an arbitrary	boundary. BFFFO can find the highest order bit set in a field.
+	BFSET, BFCHG, and BFCLR can set, complement, or clear up to 32 bits at arbitrary
+	boundaries.
+
+
+o	On the 020, all shift instructions execute in the same amount of time,
+	regardless of how many bits are shifted. Note that ASL and ASR are slower
+	than LSL and LSR. The break-even point on ADD Dn,Dn versus LSL is at
+	two shifts.
+
+
+Hardware resources:
+
+1) Blitter.
+	Use OwnBlitter()/DisownBlitter() to claim and relinquish ownership of
+	the blitter.
+
+	YOU MUST USE THE GRAPHICS.LIBRARY WAITBLIT(). This is as fast as
+	possible, uses no CPU registers, and knows about blitter bugs. You
+	cannot possibly write one that is more efficient and works on all
+	Amigas.
+
+2) Copper.
+	If you really have to take over the copper, get the LoadView(NULL),
+	do 2 WaitTOF()s, and then install your own copperlists in the cop1/2jmp
+	registers. I do not recommend this though. Future chipsets may have 
+	faster and more efficient coppers with 32 bits, and we will
+	want to use these. If you load the old	copper registers behind
+	graphics' back, we have no way of switching back to the old 16-bit mode.
+
+	temp=GfxBase->ActiView;
+	LoadView(NULL);
+	WaitTOF();
+	WaitTOF();
+	/* custom.cop1lc = ??? */
+
+	...
+
+	WaitTOF();
+	WaitTOF();
+	LoadView(temp);
+	custom.cop1lc=GfxBase->copinit;
+
+3) Audio.
+	Use the Audio device. There are functions to change the volume, period,
+	frequency, data etc that is played on any of the channels. If you must
+	hit the audio hardware, you can ask for the channel you need with the
+	highest priority (127), and the audio channel will never be stolen from
+	you until you give the channel back to the system.
+
+4) Timers.
+	Use the timer device. Some of the timer.device functions work as
+	libraries, and so are easy to use. This allows you to be compatible
+	should we use a 3rd cia time, say.
+
+	The vertical blank can be used as a special low-frequency timer. See
+	below.
+
+	CIA timers can be allocated via the resource allocation calls. The 
+	"Resources" chapter of the V37 RKM: Devices manual has a good example.
+
+
+5) Input.
+	Input will usually come from keyboard, mouse, joystick, infra-red etc.
+	Mouse and joystick can be easily read from the hardware keyboard input 
+	could come from the keyboard.device, which knows how to handle keyboard
+	timings, but it is easier by far to open an intuition window and read 
+	either RAWKEY or VANILLAKEY IDCMP messages. These either give the raw 
+	key number pressed, or the character the key pressed represents
+	(useful for international games).
+
+6) Interrupts.
+	Set up interrupt servers with high priority. Your server will
+	then be the first called.
+
+7) Disk drives.
+	Just use the DOS.library. It's so much easier, works on all possible
+	drives, past, present and future, and makes s/w so much more friendly
+	to the user. Floppy based copy protection can be accomplished by
+	allocating the blitter and inhibiting the drive while checking for 
+	the key track.
+
+Do's and Don'ts:
+
+
+o	DO clear unused bits when writing, and mask out unused or unneeded bits
+	when reading.
+
+o	DON'T use timing loops. The reasons should be obvious.
+
+o	DON'T write self-modifying code unless you know how instruction caches
+	work.
+
+o	DON'T steal memory. You can always call CloseWorkbench().
+
+o	If you are hardware banging, don't assume anything about the initial
+	contents of the display registers when your program is started.
+	Initialize everything.
+
+o	If using ViewPorts, be sure to have a properly allocated ViewPortExtra.
+	Some graphics calls are faster when one is present.
+
+o	DO NOTE WELL THE WARNING AROUND THE COPINIT STRUCTURE.
+
+
+CPU Differences:
+
+o	Caches.
+
+o	Copyback and write-through modes.
+
+o	Access to CHIP RAM.
+
+o	'020, '030, '040 instruction and effective addresses.
+
+o	MMUs and FPUs
+
