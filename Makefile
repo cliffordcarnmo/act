@@ -27,12 +27,9 @@ endif
 EMULATOR_OPTIONS=--window_width=640 --window_height=512 --floppy_drive_0_sounds=off --floppy_drive_1_sounds=off --initial_input_grab=off --console_debugger=1 --end_config=1
 XDFTOOL=amitools/xdftool
 
-all: stop clean compile pack copy adf run
+all: clean compile pack copy adf run
 
-build: stop clean compile pack copy adf
-
-stop:
-	$(shell killall fs-uae)
+build: clean compile pack copy adf
 
 clean:
 	rm -f $(TARGET_PATH)/$(TARGET)
