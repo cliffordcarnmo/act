@@ -24,7 +24,7 @@ EMULATOR=/Applications/FS-UAE.app/Contents/MacOS/fs-uae
 CRUNCHER=cruncher/Shrinkler_macOS
 endif
 
-EMULATOR_OPTIONS=--window_width=640 --window_height=512 --floppy_drive_0_sounds=off --floppy_drive_1_sounds=off --initial_input_grab=off --console_debugger=1 --end_config=1
+EMULATOR_OPTIONS=--floppy_drive_0=$(AMIGA_PATH)/$(AMIGA_FLOPPY_PATH)/$(TARGET_ADF) --window_width=640 --window_height=512 --floppy_drive_0_sounds=off --floppy_drive_1_sounds=off --initial_input_grab=off --console_debugger=1 --end_config=1
 XDFTOOL=amitools/xdftool
 
 all: clean compile pack copy adf run
@@ -51,10 +51,10 @@ adf:
 run: run500
 
 run500:
-	$(EMULATOR) --floppy_drive_0=$(AMIGA_PATH)/$(AMIGA_FLOPPY_PATH)/$(TARGET_ADF) --kickstart_file=$(AMIGA_PATH)/$(AMIGA_KICKSTART_PATH)/$(AMIGA_KICKSTART_500) --amiga_model=$(AMIGA_MODEL_500) $(EMULATOR_OPTIONS)
+	$(EMULATOR) --kickstart_file=$(AMIGA_PATH)/$(AMIGA_KICKSTART_PATH)/$(AMIGA_KICKSTART_500) --amiga_model=$(AMIGA_MODEL_500) $(EMULATOR_OPTIONS)
 
 run600:
-	$(EMULATOR) --floppy_drive_0=$(AMIGA_PATH)/$(AMIGA_FLOPPY_PATH)/$(TARGET_ADF) --kickstart_file=$(AMIGA_PATH)/$(AMIGA_KICKSTART_PATH)/$(AMIGA_KICKSTART_600) --amiga_model=$(AMIGA_MODEL_600) $(EMULATOR_OPTIONS)
+	$(EMULATOR) --kickstart_file=$(AMIGA_PATH)/$(AMIGA_KICKSTART_PATH)/$(AMIGA_KICKSTART_600) --amiga_model=$(AMIGA_MODEL_600) $(EMULATOR_OPTIONS)
 
 run1200:
-	$(EMULATOR) --floppy_drive_0=$(AMIGA_PATH)/$(AMIGA_FLOPPY_PATH)/$(TARGET_ADF) --kickstart_file=$(AMIGA_PATH)/$(AMIGA_KICKSTART_PATH)/$(AMIGA_KICKSTART_1200) --amiga_model=$(AMIGA_MODEL_1200) $(EMULATOR_OPTIONS)
+	$(EMULATOR) --kickstart_file=$(AMIGA_PATH)/$(AMIGA_KICKSTART_PATH)/$(AMIGA_KICKSTART_1200) --amiga_model=$(AMIGA_MODEL_1200) $(EMULATOR_OPTIONS)
