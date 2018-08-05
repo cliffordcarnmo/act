@@ -46,7 +46,7 @@ copy:
 	cp $(TARGET_PATH)/$(TARGET) $(AMIGA_PATH)/$(AMIGA_HD_PATH)/
 
 adf:
-	$(XDFTOOL) $(AMIGA_PATH)/$(AMIGA_FLOPPY_PATH)/$(TARGET_ADF) create + format "amidi" ofs + boot install + write $(AMIGA_PATH)/$(AMIGA_HD_PATH)/$(TARGET) + makedir s + makedir devs + write $(AMIGA_PATH)/$(AMIGA_HD_PATH)/devs/serial.device devs + write $(AMIGA_PATH)/$(AMIGA_HD_PATH)/s/startup-sequence s 
+	$(XDFTOOL) $(AMIGA_PATH)/$(AMIGA_FLOPPY_PATH)/$(TARGET_ADF) create + format "out" ofs + boot install + write $(AMIGA_PATH)/$(AMIGA_HD_PATH)/$(TARGET) + makedir s + write $(AMIGA_PATH)/$(AMIGA_HD_PATH)/s/startup-sequence s 
 
 run: run500
 
