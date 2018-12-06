@@ -1,4 +1,4 @@
-# Amiga Crosschain Development
+# Amiga Crossdevelopment Toolchain
 
 * Building the compilers
 ```
