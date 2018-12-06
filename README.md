@@ -1,8 +1,18 @@
-Amiga Crosschain Development
-----------------------------
+# Amiga Crosschain Development
 
-0: Install FS-UAE (defaults to /usr/bin/fs-uae on Linux and /Applications/FS-UAE.app/Contents/MacOS/fs-uae on macOS (you can change this in the Makefile))
+* Building the compilers
+```
+./compiler-setup.sh
+```
 
-1: `./compiler-setup.sh`
+* Building the Amiga executable and running FS-UAE
+```
+make
+```
 
-2: `make`
+
+## Building on Windows
+
+Building on Windows requires, apart from the above steps, the following tools to be installed:
+* [BASH](https://www.windowscentral.com/how-install-bash-shell-command-line-windows-10)
+* [MingW](https://sourceforge.net/projects/mingw-w64/)
