@@ -1,7 +1,5 @@
 # Amiga Crosschain Development
 
-## Building on Linux or MacOS
-
 * Building the compilers
 ```
 ./compiler-setup.sh
